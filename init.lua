@@ -160,11 +160,8 @@ paintedcanvas = {
 
     local under = pointed_thing.under
     local above = pointed_thing.above
-    local dir = {
-      x = under.x - above.x,
-      y = under.y - above.y,
-      z = under.z - above.z
-    }
+    local dir = sub(under, above)
+
     local wm = minetest.dir_to_wallmounted(dir)
 
     local fd = walltoface[wm + 1]
