@@ -82,7 +82,6 @@ picent = {
   end
 }
 
-
 paintbox = { [0] = { -0.5,-0.5,0,0.5,0.5,0 },
              [1] = { 0,-0.5,-0.5,0,0.5,0.5 } }
 
@@ -316,7 +315,6 @@ easel = {
 }
 
 --brushes
-
 local function table_copy(t)
   local t2 = {}
   for k,v in pairs(t) do
