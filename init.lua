@@ -24,6 +24,9 @@ textures = {
   pink = "pink.png"
 }
 
+local colors = {}
+local revcolors = {}
+
 thickness = 0.1
 
 -- picture node
@@ -351,9 +354,6 @@ minetest.register_entity("painting:paintent", paintent)
 minetest.register_node("painting:canvasnode", canvasnode)
 
 minetest.register_node("painting:easel", easel)
-
-colors = {}
-revcolors = {}
 
 for color, _ in pairs(textures) do
   table.insert(revcolors, color)
