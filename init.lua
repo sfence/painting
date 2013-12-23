@@ -1,10 +1,10 @@
--- painting - in-game painting for minetest-c55
+-- painting - in-game painting for minetest
 
 -- THIS MOD CODE AND TEXTURES LICENSED
 --            <3 TO YOU <3
---    UNDER TERMS OF GPL LICENSE
+--    UNDER TERMS OF WTFPL LICENSE
 
--- 2012 obneq aka jin xi
+-- 2012, 2013, 2014 obneq aka jin xi
 
 -- a picture is drawn using a node(box) to draw the supporting canvas
 -- and an entity which has the painting as its texture.
