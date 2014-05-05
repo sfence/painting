@@ -6,9 +6,9 @@
 
 -- 2012, 2013, 2014 obneq aka jin xi
 
--- a picture is drawn using a node(box) to draw the supporting canvas
+-- picture is drawn using a nodebox to draw the canvas
 -- and an entity which has the painting as its texture.
--- this texture is created by minetest-c55's internal image
+-- this texture is created by minetests internal image
 -- compositing engine (see tile.cpp).
 
 dofile(minetest.get_modpath("painting").."/crafts.lua")
@@ -97,8 +97,9 @@ paintent = {
     if not textures[name] then return end
 
     --get player eye level
+    --see player.h line 129
     local ppos = puncher:getpos()
-    ppos = { x = ppos.x, y = ppos.y+(1.5 + 1/16), z = ppos.z }
+    ppos = { x = ppos.x, y = ppos.y + 1.625, z = ppos.z }
 
     local pos = self.object:getpos()
     local l = puncher:get_look_dir()
@@ -112,15 +113,19 @@ paintent = {
     pos = { x = pos.x + off * od.x, y = pos.y + off, z = pos.z + off * od.z }
     p = sub(p, pos)
     local x = math.abs(p.x + p.z)
-    local y = p.y
+    local y = 1 - p.y
 
-    x = round(x / (1/self.res))
-    y = round((1-y) / (1/self.res))
+    --print("x: "..x.." y: "..y)
 
+    x = math.floor(x / (1/self.res) )
+    y = math.floor(y / (1/self.res) )
+
+    --print("grid x: "..x.." grid y: "..y)
+    
     x = clamp(x, self.res)
-    y = clamp(y-1, self.res)
+    y = clamp(y, self.res)
 
-    self.grid[x][y]=colors[name]
+    self.grid[x][y] = colors[name]
     self.object:set_properties({textures = { to_imagestring(self.grid, self.res) }})
 
     local wielded = puncher:get_wielded_item()
@@ -136,6 +141,7 @@ paintent = {
     self.grid = data.grid
     self.object:set_properties({ textures = { to_imagestring(self.grid, self.res) }})
     self.object:set_properties({ collisionbox = paintbox[self.fd%2] })
+    self.object:set_armor_groups({immortal=1})
   end,
 
   get_staticdata = function(self)
@@ -293,6 +299,7 @@ easel = {
 
     local p = minetest.env:add_entity(pos, "painting:paintent"):get_luaentity()
     p.object:set_properties({ collisionbox = paintbox[fd%2] })
+    p.object:set_armor_groups({immortal=1})
     p.object:setyaw(math.pi * fd / -2)
     p.grid = initgrid(res)
     p.res = res
@@ -341,8 +348,9 @@ minetest.register_entity("painting:picent", picent)
 minetest.register_node("painting:pic", picnode)
 
 minetest.register_craftitem("painting:canvas_16", canvas)
---minetest.register_craftitem("painting:canvas_32", canvas)
---minetest.register_craftitem("painting:canvas_64", canvas)
+
+minetest.register_craftitem("painting:canvas_32", canvas)
+minetest.register_craftitem("painting:canvas_64", canvas)
 
 minetest.register_craftitem("painting:paintedcanvas", paintedcanvas)
 minetest.register_entity("painting:paintent", paintent)
@@ -416,10 +424,6 @@ function intersect(pos, dir, origin, normal)
   return { x = pos.x + dir.x * t,
            y = pos.y + dir.y * t,
            z = pos.z + dir.z * t }
-end
-
-function round(num)
-  return math.floor(num+0.5)
 end
 
 function clamp(num, res)
