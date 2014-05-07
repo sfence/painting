@@ -394,13 +394,13 @@ end
 
 function to_imagestring(data, res)
   if not data then return end
-  local imagestring = "[combine:"..res.."x"..res..":"
+  local t = { "[combine:", res, "x", res, ":" }
   for y = 0, res - 1 do
     for x = 0, res - 1 do
-      imagestring  = imagestring..x..","..y.."="..revcolors[ data[x][y] ]..".png:"
+       table.insert(t, x..","..y.."="..revcolors[ data[x][y] ]..".png:")
     end
   end
-  return imagestring
+  return table.concat(t)
 end
 
 dirs = {
