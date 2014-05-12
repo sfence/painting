@@ -45,7 +45,7 @@ picnode =  {
   paramtype2 = "facedir",
   node_box = picbox,
   selection_box = picbox,
-  groups = { snappy = 2, choppy = 2, oddly_breakable_by_hand = 2 },
+  groups = { snappy = 2, choppy = 2, oddly_breakable_by_hand = 2, not_in_creative_inventory=1},
 
   --handle that right below, don't drop anything
   drop = "",
@@ -157,8 +157,9 @@ local walltoface = {-1, -1, 1, 3, 0, 2}
 paintedcanvas = {
   description = "Painted Canvas",
   inventory_image = "painted.png",
-  stack_max = 1,
-
+  stack_max = 1, 
+  groups = { snappy = 2, choppy = 2, oddly_breakable_by_hand = 2, not_in_creative_inventory=1 },
+    
   on_place = function(itemstack, placer, pointed_thing)
     --place node
     local pos = pointed_thing.above
@@ -224,7 +225,7 @@ canvasnode = {
   paramtype2 = "facedir",
   node_box = canvasbox,
   selection_box = canvasbox,
-  groups = { snappy = 2, choppy = 2, oddly_breakable_by_hand = 2 },
+  groups = { snappy = 2, choppy = 2, oddly_breakable_by_hand = 2, not_in_creative_inventory=1 },
 
   drop = "",
 
@@ -240,6 +241,9 @@ canvasnode = {
       end
       e.object:remove()
     end
+
+    pos.y = pos.y-1
+    minetest.env:get_meta(pos):set_string("has_canvas", 0)
 
     if data.grid then
       local item = { name = "painting:paintedcanvas", count = 1, metadata = minetest.serialize(data) }
