@@ -115,14 +115,14 @@ paintent = {
 
 		local off = -0.5
 		pos = { x = pos.x + off * od.x, y = pos.y + off, z = pos.z + off * od.z }
-		p = sub(p, pos)
+		p = vector.subtract(p, pos)
 		local x = math.abs(p.x + p.z)
 		local y = 1 - p.y
 
 		--print("x: "..x.." y: "..y)
 
-		x = math.floor(x / (1/self.res) )
-		y = math.floor(y / (1/self.res) )
+		x = math.floor(x*self.res)
+		y = math.floor(y*self.res)
 
 		--print("grid x: "..x.." grid y: "..y)
 
@@ -170,7 +170,7 @@ paintedcanvas = {
 
 		local under = pointed_thing.under
 		local above = pointed_thing.above
-		local dir = sub(under, above)
+		local dir = vector.subtract(under, above)
 
 		local wm = minetest.dir_to_wallmounted(dir)
 
@@ -295,7 +295,9 @@ easel = {
 		local fd = node.param2
 		pos = { x = pos.x, y = pos.y + 1, z = pos.z }
 
-		if minetest.get_node(pos).name ~= "air" then return end
+		if minetest.get_node(pos).name ~= "air" then
+			return
+		end
 		minetest.add_node(pos, { name = "painting:canvasnode", param2 = fd, paramtype2 = "none" })
 
 		local dir = dirs[fd]
@@ -386,10 +388,10 @@ minetest.register_alias("easel", "painting:easel")
 minetest.register_alias("canvas", "painting:canvas_16")
 
 function initgrid(res)
-	local grid, x, y = {}
-	for x = 0, res - 1 do
+	local grid, a, x, y = {}, res-1
+	for x = 0, a do
 		grid[x] = {}
-		for y = 0, res - 1 do
+		for y = 0, a do
 			grid[x][y] = colors["white"]
 		end
 	end
@@ -411,20 +413,15 @@ dirs = {
 	[0] = { x = 0, z = 1 },
 	[1] = { x = 1, z = 0 },
 	[2] = { x = 0, z =-1 },
-	[3] = { x =-1, z = 0 } }
-
-function sub(v, w)
-	return { x = v.x - w.x,
-		y = v.y - w.y,
-		z = v.z - w.z }
-end
+	[3] = { x =-1, z = 0 }
+}
 
 function dot(v, w)
 	return	v.x * w.x + v.y * w.y + v.z * w.z
 end
 
 function intersect(pos, dir, origin, normal)
-	local t = -(dot(sub(pos, origin), normal)) / dot(dir, normal)
+	local t = -(dot(vector.subtract(pos, origin), normal)) / dot(dir, normal)
 	return { x = pos.x + dir.x * t,
 					y = pos.y + dir.y * t,
 					z = pos.z + dir.z * t }
@@ -433,9 +430,6 @@ end
 function clamp(num, res)
 	if num < 0 then
 		return 0
-	elseif num > res - 1 then
-		return res - 1
-	else
-		return num
 	end
+	return math.min(num, res-1)
 end
