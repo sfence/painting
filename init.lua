@@ -92,7 +92,7 @@ paintent = {
 	visual = "upright_sprite",
 	textures = { "white.png" },
 
-	on_punch = function(self, puncher, time_from_last_punch, tool_capabilities, dir)
+	on_punch = function(self, puncher)
 		--check for brush
 		local name = puncher:get_wielded_item():get_name()
 		name = string.split(name, "_")[2]
@@ -114,7 +114,7 @@ paintent = {
 		local p = intersect(ppos, l, pos, normal)
 
 		local off = -0.5
-		pos = { x = pos.x + off * od.x, y = pos.y + off, z = pos.z + off * od.z }
+		pos = vector.add(pos, {x=off*od.x, y=off, z=off*od.z})
 		p = vector.subtract(p, pos)
 		local x = math.abs(p.x + p.z)
 		local y = 1 - p.y
@@ -129,8 +129,21 @@ paintent = {
 		x = clamp(x, self.res)
 		y = clamp(y, self.res)
 
-		self.grid[x][y] = colors[name]
+		local x0 = self.x0
+		if puncher:get_player_control().sneak
+		and x0 then
+			local y0 = self.y0
+			local line = vector.twoline(x0-x, y0-y)
+			for _,coord in pairs(line) do
+				self.grid[x+coord[1]][y+coord[2]] = colors[name]
+			end
+		else
+			self.grid[x][y] = colors[name]
+		end
 		self.object:set_properties({textures = { to_imagestring(self.grid, self.res) }})
+
+		self.x0 = x
+		self.y0 = y
 
 		local wielded = puncher:get_wielded_item()
 		wielded:add_wear(65535/256)
@@ -139,17 +152,24 @@ paintent = {
 
 	on_activate = function(self, staticdata)
 		local data = minetest.deserialize(staticdata)
-		if not data then return end
+		if not data then
+			return
+		end
 		self.fd = data.fd
+		self.x0 = data.x0
+		self.y0 = data.y0
 		self.res = data.res
 		self.grid = data.grid
 		self.object:set_properties({ textures = { to_imagestring(self.grid, self.res) }})
+		if not self.fd then
+			return
+		end
 		self.object:set_properties({ collisionbox = paintbox[self.fd%2] })
 		self.object:set_armor_groups({immortal=1})
 	end,
 
 	get_staticdata = function(self)
-		local data = { fd = self.fd, res = self.res, grid = self.grid }
+		local data = { fd = self.fd, res = self.res, grid = self.grid, x0 = self.x0, y0 = self.y0 }
 		return minetest.serialize(data)
 	end
 }
