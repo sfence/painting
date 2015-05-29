@@ -1,6 +1,6 @@
 -- painting - in-game painting for minetest
 
--- THIS MOD CODE AND TEXTURES LICENSED 
+-- THIS MOD CODE AND TEXTURES LICENSED
 --            <3 TO YOU <3
 --    UNDER TERMS OF WTFPL LICENSE
 
