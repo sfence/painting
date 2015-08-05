@@ -73,12 +73,12 @@ picent = {
 	textures = { "white.png" },
 
 	on_activate = function(self, staticdata)
-			local pos = self.object:getpos()
-			local meta = minetest.get_meta(pos)
-			local data = meta:get_string("painting:picturedata")
-			data = minetest.deserialize(data)
-			if not data.grid then return end
-			self.object:set_properties({textures = { to_imagestring(data.grid, data.res) }})
+		local pos = self.object:getpos()
+		local meta = minetest.get_meta(pos)
+		local data = meta:get_string("painting:picturedata")
+		data = minetest.deserialize(data)
+		if not data.grid then return end
+		self.object:set_properties({textures = { to_imagestring(data.grid, data.res) }})
 	end
 }
 
