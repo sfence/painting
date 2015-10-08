@@ -13,7 +13,7 @@
 
 dofile(minetest.get_modpath("painting").."/crafts.lua")
 
-textures = {
+local textures = {
 	white = "white.png", yellow = "yellow.png",
 	orange = "orange.png", red = "red.png",
 	violet = "violet.png", blue = "blue.png",
@@ -27,15 +27,15 @@ textures = {
 local colors = {}
 local revcolors = {}
 
-thickness = 0.1
+local thickness = 0.1
 
 -- picture node
-picbox = {
+local picbox = {
 	type = "fixed",
 	fixed = { -0.499, -0.499, 0.499, 0.499, 0.499, 0.499 - thickness }
 }
 
-picnode = {
+minetest.register_node("painting:pic", {
 	description = "Picture",
 	tiles = { "white.png" },
 	inventory_image = "painted.png",
@@ -50,24 +50,26 @@ picnode = {
 	--handle that right below, don't drop anything
 	drop = "",
 
-	after_dig_node=function(pos, oldnode, oldmetadata, digger)
+	after_dig_node=function(pos, _, oldmetadata, digger)
 		--find and remove the entity
-		local objects = minetest.get_objects_inside_radius(pos, 0.5)
-		for _, e in ipairs(objects) do
+		for _,e in pairs(minetest.get_objects_inside_radius(pos, 0.5)) do
 			if e:get_luaentity().name == "painting:picent" then
 				e:remove()
 			end
 		end
 
 		--put picture data back into inventory item
-		local data = oldmetadata.fields["painting:picturedata"]
-		local item = { name = "painting:paintedcanvas", count = 1, metadata = data }
-		digger:get_inventory():add_item("main", item)
+		digger:get_inventory():add_item("main", {
+			name = "painting:paintedcanvas",
+			count = 1,
+			metadata = oldmetadata.fields["painting:picturedata"]
+		})
 	end
-}
+})
 
+local to_imagestring
 -- picture texture entity
-picent = {
+minetest.register_entity("painting:picent", {
 	collisionbox = { 0, 0, 0, 0, 0, 0 },
 	visual = "upright_sprite",
 	textures = { "white.png" },
@@ -80,14 +82,15 @@ picent = {
 		if not data.grid then return end
 		self.object:set_properties({textures = { to_imagestring(data.grid, data.res) }})
 	end
-}
+})
 
-paintbox = {
+local paintbox = {
 	[0] = { -0.5,-0.5,0,0.5,0.5,0 },
 	[1] = { 0,-0.5,-0.5,0,0.5,0.5 }
 }
 
-paintent = {
+local dirs, intersect, clamp
+minetest.register_entity("painting:paintent", {
 	collisionbox = { 0, 0, 0, 0, 0, 0 },
 	visual = "upright_sprite",
 	textures = { "white.png" },
@@ -103,7 +106,7 @@ paintent = {
 		--get player eye level
 		--see player.h line 129
 		local ppos = puncher:getpos()
-		ppos = { x = ppos.x, y = ppos.y + 1.625, z = ppos.z }
+		ppos.y = ppos.y + 1.625
 
 		local pos = self.object:getpos()
 		local l = puncher:get_look_dir()
@@ -172,13 +175,13 @@ paintent = {
 		local data = { fd = self.fd, res = self.res, grid = self.grid, x0 = self.x0, y0 = self.y0 }
 		return minetest.serialize(data)
 	end
-}
+})
 
 -- just pure magic
 local walltoface = {-1, -1, 1, 3, 0, 2}
 
 --paintedcanvas picture inventory item
-paintedcanvas = {
+minetest.register_craftitem("painting:paintedcanvas", {
 	description = "Painted Canvas",
 	inventory_image = "painted.png",
 	stack_max = 1,
@@ -187,32 +190,31 @@ paintedcanvas = {
 	on_place = function(itemstack, placer, pointed_thing)
 		--place node
 		local pos = pointed_thing.above
+		if minetest.is_protected(pos, placer:get_player_name()) then
+			return
+		end
 
 		local under = pointed_thing.under
-		local above = pointed_thing.above
-		local dir = vector.subtract(under, above)
 
-		local wm = minetest.dir_to_wallmounted(dir)
+		local wm = minetest.dir_to_wallmounted(vector.subtract(under, pos))
 
 		local fd = walltoface[wm + 1]
 		if fd == -1 then
 			return itemstack
 		end
 
-		minetest.add_node(pos, { name = "painting:pic", param2 = fd, paramtype2 = "none" })
+		minetest.add_node(pos, {name = "painting:pic", param2 = fd})
 
 		--save metadata
 		local data = itemstack:get_metadata()
-		local meta = minetest.get_meta(pos)
-		meta:set_string("painting:picturedata", data)
+		minetest.get_meta(pos):set_string("painting:picturedata", data)
 
 		--add entity
 		dir = dirs[fd]
 		local off = 0.5 - thickness - 0.01
 
-		pos = { x = pos.x + dir.x * off,
-			y = pos.y,
-			z = pos.z + dir.z * off }
+		pos.x = pos.x + dir.x * off
+		pos.z = pos.z + dir.z * off
 
 		data = minetest.deserialize(data)
 
@@ -222,22 +224,24 @@ paintedcanvas = {
 
 		return ItemStack("")
 	end
-}
+})
 
---canvas inventory item
-canvas = {
-	description = "Canvas",
-	inventory_image = "default_paper.png",
-	stack_max = 99,
-}
+--canvas inventory items
+for i = 4,6 do
+	minetest.register_craftitem("painting:canvas_"..2^i, {
+		description = "Canvas",
+		inventory_image = "default_paper.png",
+		stack_max = 99,
+	})
+end
 
 --canvas for drawing
-canvasbox = {
+local canvasbox = {
 	type = "fixed",
-	fixed = { -0.5, -0.5, 0.0, 0.5, 0.5, thickness }
+	fixed = { -0.5, -0.5, 0, 0.5, 0.5, thickness }
 }
 
-canvasnode = {
+minetest.register_node("painting:canvasnode", {
 	description = "Canvas",
 	tiles = { "white.png" },
 	inventory_image = "painted.png",
@@ -251,11 +255,10 @@ canvasnode = {
 
 	drop = "",
 
-	after_dig_node=function(pos, oldnode, oldmetadata, digger)
+	after_dig_node = function(pos, oldnode, oldmetadata, digger)
 		--get data and remove pixels
 		local data = {}
-		local objects = minetest.get_objects_inside_radius(pos, 0.5)
-		for _, e in ipairs(objects) do
+		for _,e in pairs(minetest.get_objects_inside_radius(pos, 0.1)) do
 			e = e:get_luaentity()
 			if e.grid then
 				data.grid = e.grid
@@ -265,17 +268,17 @@ canvasnode = {
 		end
 
 		pos.y = pos.y-1
-		minetest.get_meta(pos):set_string("has_canvas", 0)
+		minetest.get_meta(pos):set_int("has_canvas", 0)
 
 		if data.grid then
 			local item = { name = "painting:paintedcanvas", count = 1, metadata = minetest.serialize(data) }
 			digger:get_inventory():add_item("main", item)
 		end
 	end
-}
+})
 
 -- easel
-easelbox = {
+local easelbox = {
 	type="fixed",
 	fixed = {
 		--feet
@@ -289,7 +292,8 @@ easelbox = {
 	}
 }
 
-easel = {
+local initgrid
+minetest.register_node("painting:easel", {
 	description = "Easel",
 	tiles = { "default_wood.png" },
 	drawtype = "nodebox",
@@ -306,22 +310,23 @@ easel = {
 		wielded = string.split(wielded_raw, "_")
 
 		local name = wielded[1]
-		local res = tonumber(wielded[2])
-
 		if name ~= "painting:canvas" then
 			return
 		end
+		local res = tonumber(wielded[2])
+
 		local meta = minetest.get_meta(pos)
 		local fd = node.param2
-		pos = { x = pos.x, y = pos.y + 1, z = pos.z }
+		pos.y = pos.y+1
 
 		if minetest.get_node(pos).name ~= "air" then
 			return
 		end
-		minetest.add_node(pos, { name = "painting:canvasnode", param2 = fd, paramtype2 = "none" })
+		minetest.add_node(pos, { name = "painting:canvasnode", param2 = fd})
 
 		local dir = dirs[fd]
-		pos = { x = pos.x - 0.01 * dir.x, y = pos.y, z = pos.z - 0.01 * dir.z }
+		pos.x = pos.x - 0.01 * dir.x
+		pos.z = pos.z - 0.01 * dir.z
 
 		local p = minetest.add_entity(pos, "painting:paintent"):get_luaentity()
 		p.object:set_properties({ collisionbox = paintbox[fd%2] })
@@ -336,16 +341,10 @@ easel = {
 		player:get_inventory():remove_item("main", itemstack)
 	end,
 
-	can_dig = function(pos,player)
-		local meta = minetest.get_meta(pos)
-		local inv = meta:get_inventory()
-
-		if meta:get_int("has_canvas") == 0 then
-			return true
-		end
-		return false
+	can_dig = function(pos)
+		return minetest.get_meta(pos):get_int("has_canvas") == 0
 	end
-}
+})
 
 --brushes
 local function table_copy(t)
@@ -356,33 +355,14 @@ local function table_copy(t)
 	return t2
 end
 
-brush = {
-	description = "brush",
-	inventory_image = "default_tool_steelaxe.png",
+local brush = {
 	wield_image = "",
-	wield_scale = { x = 1, y = 1, z = 1 },
-	stack_max = 99,
-	liquids_pointable = false,
 	tool_capabilities = {
 		full_punch_interval = 1.0,
 		max_drop_level=0,
 		groupcaps = {}
 	}
 }
-
-minetest.register_entity("painting:picent", picent)
-minetest.register_node("painting:pic", picnode)
-
-minetest.register_craftitem("painting:canvas_16", canvas)
-
-minetest.register_craftitem("painting:canvas_32", canvas)
-minetest.register_craftitem("painting:canvas_64", canvas)
-
-minetest.register_craftitem("painting:paintedcanvas", paintedcanvas)
-minetest.register_entity("painting:paintent", paintent)
-minetest.register_node("painting:canvasnode", canvasnode)
-
-minetest.register_node("painting:easel", easel)
 
 for color, _ in pairs(textures) do
 	table.insert(revcolors, color)
@@ -420,14 +400,44 @@ end
 
 function to_imagestring(data, res)
 	if not data then return end
-	local t = { "[combine:", res, "x", res, ":" }
+	local t,n = {"[combine:", res, "x", res, ":"},6
 	for y = 0, res - 1 do
 		for x = 0, res - 1 do
-			table.insert(t, x..","..y.."="..revcolors[ data[x][y] ]..".png:")
+			t[n] = x..","..y.."="..revcolors[ data[x][y] ]..".png:"
+			n = n+1
 		end
 	end
 	return table.concat(t)
 end
+
+--[[ allows using many colours, doesn't work
+function to_imagestring(data, res)
+	if not data then
+		return
+	end
+	local t,n = {},1
+	local sbc = {}
+	for y = 0, res - 1 do
+		for x = 0, res - 1 do
+			local col = revcolors[data[x][y] ]
+			sbc[col] = sbc[col] or {}
+			sbc[col][#sbc[col] ] = {x,y}
+		end
+	end
+	for col,ps in pairs(sbc) do
+		t[n] = "([combine:"..res.."x"..res..":"
+		n = n+1
+		for _,p in pairs(ps) do
+			t[n] = p[1]..","..p[2].."=white.png:"
+			n = n+1
+		end
+		t[n-1] = string.sub(t[n-1], 1,-2)
+		t[n] = "^[colorize:"..col..")^"
+		n = n+1
+	end
+	t[n-1] = string.sub(t[n-1], 1,-2)
+	return table.concat(t)
+end--]]
 
 dirs = {
 	[0] = { x = 0, z = 1 },
@@ -436,15 +446,13 @@ dirs = {
 	[3] = { x =-1, z = 0 }
 }
 
-function dot(v, w)
+local function dot(v, w)
 	return	v.x * w.x + v.y * w.y + v.z * w.z
 end
 
 function intersect(pos, dir, origin, normal)
 	local t = -(dot(vector.subtract(pos, origin), normal)) / dot(dir, normal)
-	return { x = pos.x + dir.x * t,
-					y = pos.y + dir.y * t,
-					z = pos.z + dir.z * t }
+	return vector.add(pos, vector.multiply(dir, t))
 end
 
 function clamp(num, res)
