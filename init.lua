@@ -79,7 +79,12 @@ minetest.register_entity("painting:picent", {
 		local meta = minetest.get_meta(pos)
 		local data = meta:get_string("painting:picturedata")
 		data = minetest.deserialize(data)
-		if not data.grid then return end
+
+		if not data
+		or not data.grid then
+			return
+		end
+
 		self.object:set_properties({textures = { to_imagestring(data.grid, data.res) }})
 	end
 })
