@@ -11,6 +11,7 @@
 -- this texture is created by minetests internal image
 -- compositing engine (see tile.cpp).
 
+
 dofile(minetest.get_modpath("painting").."/crafts.lua")
 
 local textures = {
@@ -34,6 +35,50 @@ local picbox = {
 	type = "fixed",
 	fixed = { -0.499, -0.499, 0.499, 0.499, 0.499, 0.499 - thickness }
 }
+
+-- Initiate a white grid.
+local function initgrid(res)
+	local grid, a, x, y = {}, res-1
+	for x = 0, a do
+		grid[x] = {}
+		for y = 0, a do
+			grid[x][y] = colors["white"]
+		end
+	end
+	return grid
+end
+
+local function to_imagestring(data, res)
+	if not data then return end
+	local t,n = {"[combine:", res, "x", res, ":"},6
+	for y = 0, res - 1 do
+		for x = 0, res - 1 do
+			t[n] = x..","..y.."="..revcolors[ data[x][y] ]..".png:"
+			n = n+1
+		end
+	end
+	return table.concat(t)
+end
+
+local dirs = {
+	[0] = { x = 0, z = 1 },
+	[1] = { x = 1, z = 0 },
+	[2] = { x = 0, z =-1 },
+	[3] = { x =-1, z = 0 }
+}
+
+local function dot(v, w)
+	return	v.x * w.x + v.y * w.y + v.z * w.z
+end
+
+local function intersect(pos, dir, origin, normal)
+	local t = -(dot(vector.subtract(pos, origin), normal)) / dot(dir, normal)
+	return vector.add(pos, vector.multiply(dir, t))
+end
+
+local function clamp(x, min,max)
+   return math.max(math.min(x, max),min)
+end
 
 minetest.register_node("painting:pic", {
 	description = "Picture",
@@ -67,7 +112,6 @@ minetest.register_node("painting:pic", {
 	end
 })
 
-local to_imagestring
 -- picture texture entity
 minetest.register_entity("painting:picent", {
 	collisionbox = { 0, 0, 0, 0, 0, 0 },
@@ -94,7 +138,6 @@ local paintbox = {
 	[1] = { 0,-0.5,-0.5,0,0.5,0.5 }
 }
 
-local dirs, intersect, clamp
 minetest.register_entity("painting:paintent", {
 	collisionbox = { 0, 0, 0, 0, 0, 0 },
 	visual = "upright_sprite",
@@ -134,8 +177,8 @@ minetest.register_entity("painting:paintent", {
 
 		--print("grid x: "..x.." grid y: "..y)
 
-		x = clamp(x, self.res)
-		y = clamp(y, self.res)
+		x = clamp(x, 0, self.res)
+		y = clamp(y, 0, self.res)
 
 		local x0 = self.x0
 		if puncher:get_player_control().sneak
@@ -297,7 +340,6 @@ local easelbox = {
 	}
 }
 
-local initgrid
 minetest.register_node("painting:easel", {
 	description = "Easel",
 	tiles = { "default_wood.png" },
@@ -392,29 +434,6 @@ end
 minetest.register_alias("easel", "painting:easel")
 minetest.register_alias("canvas", "painting:canvas_16")
 
-function initgrid(res)
-	local grid, a, x, y = {}, res-1
-	for x = 0, a do
-		grid[x] = {}
-		for y = 0, a do
-			grid[x][y] = colors["white"]
-		end
-	end
-	return grid
-end
-
-function to_imagestring(data, res)
-	if not data then return end
-	local t,n = {"[combine:", res, "x", res, ":"},6
-	for y = 0, res - 1 do
-		for x = 0, res - 1 do
-			t[n] = x..","..y.."="..revcolors[ data[x][y] ]..".png:"
-			n = n+1
-		end
-	end
-	return table.concat(t)
-end
-
 --[[ allows using many colours, doesn't work
 function to_imagestring(data, res)
 	if not data then
@@ -443,26 +462,3 @@ function to_imagestring(data, res)
 	t[n-1] = string.sub(t[n-1], 1,-2)
 	return table.concat(t)
 end--]]
-
-dirs = {
-	[0] = { x = 0, z = 1 },
-	[1] = { x = 1, z = 0 },
-	[2] = { x = 0, z =-1 },
-	[3] = { x =-1, z = 0 }
-}
-
-local function dot(v, w)
-	return	v.x * w.x + v.y * w.y + v.z * w.z
-end
-
-function intersect(pos, dir, origin, normal)
-	local t = -(dot(vector.subtract(pos, origin), normal)) / dot(dir, normal)
-	return vector.add(pos, vector.multiply(dir, t))
-end
-
-function clamp(num, res)
-	if num < 0 then
-		return 0
-	end
-	return math.min(num, res-1)
-end
