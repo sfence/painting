@@ -60,14 +60,14 @@ local function to_imagestring(data, res)
 	return table.concat(t)
 end
 
-local dirs = {
+local dirs = {  -- Directions the painting may be.
 	[0] = { x = 0, z = 1 },
 	[1] = { x = 1, z = 0 },
 	[2] = { x = 0, z =-1 },
 	[3] = { x =-1, z = 0 }
 }
 
-local function dot(v, w)
+local function dot(v, w)  -- Inproduct.
 	return	v.x * w.x + v.y * w.y + v.z * w.z
 end
 
@@ -138,6 +138,21 @@ local paintbox = {
 	[1] = { 0,-0.5,-0.5,0,0.5,0.5 }
 }
 
+-- Figure where it hits the canvas, in fraction given position and direction.
+local function figure_paint_pos(pos, d,od, ppos, l)
+   --get player eye level
+   --see player.h line 129
+  ppos.y = ppos.y + 1.625
+
+  local normal = { x = d.x, y = 0, z = d.z }
+  local p = intersect(ppos, l, pos, normal)
+
+  local off = -0.5
+  pos = vector.add(pos, {x=off*od.x, y=off, z=off*od.z})
+  p = vector.subtract(p, pos)
+  return math.abs(p.x + p.z), 1 - p.y
+end
+
 minetest.register_entity("painting:paintent", {
 	collisionbox = { 0, 0, 0, 0, 0, 0 },
 	visual = "upright_sprite",
@@ -145,60 +160,35 @@ minetest.register_entity("painting:paintent", {
 
 	on_punch = function(self, puncher)
 		--check for brush
-		local name = puncher:get_wielded_item():get_name()
-		name = string.split(name, "_")[2]
-		if not textures[name] then
-			return
-		end
+     local name = string.match(puncher:get_wielded_item():get_name(), "_([^_]*)")
+     if not textures[name] then  -- Not one of the painters.
+        return
+     end
 
-		--get player eye level
-		--see player.h line 129
-		local ppos = puncher:getpos()
-		ppos.y = ppos.y + 1.625
+     local x,y = figure_paint_pos(self.object:getpos(),
+                                  dirs[self.fd], dirs[(self.fd + 1) % 4],
+                                  puncher:getpos(), puncher:get_look_dir())
 
-		local pos = self.object:getpos()
-		local l = puncher:get_look_dir()
+     local x,y = math.floor(self.res*clamp(x, 0, 1)), math.floor(self.res*clamp(y, 0, 1))
 
-		local d = dirs[self.fd]
-		local od = dirs[(self.fd + 1) % 4]
-		local normal = { x = d.x, y = 0, z = d.z }
-		local p = intersect(ppos, l, pos, normal)
+     local x0 = self.x0
+     if puncher:get_player_control().sneak and x0 then
+        local y0 = self.y0
+        local line = vector.twoline(x0-x, y0-y)
+        for _,coord in pairs(line) do
+           self.grid[x+coord[1]][y+coord[2]] = colors[name]
+        end
+     else
+        self.grid[x][y] = colors[name]
+     end
+     self.object:set_properties({textures = { to_imagestring(self.grid, self.res) }})
 
-		local off = -0.5
-		pos = vector.add(pos, {x=off*od.x, y=off, z=off*od.z})
-		p = vector.subtract(p, pos)
-		local x = math.abs(p.x + p.z)
-		local y = 1 - p.y
+     self.x0 = x
+     self.y0 = y
 
-		--print("x: "..x.." y: "..y)
-
-		x = math.floor(x*self.res)
-		y = math.floor(y*self.res)
-
-		--print("grid x: "..x.." grid y: "..y)
-
-		x = clamp(x, 0, self.res)
-		y = clamp(y, 0, self.res)
-
-		local x0 = self.x0
-		if puncher:get_player_control().sneak
-		and x0 then
-			local y0 = self.y0
-			local line = vector.twoline(x0-x, y0-y)
-			for _,coord in pairs(line) do
-				self.grid[x+coord[1]][y+coord[2]] = colors[name]
-			end
-		else
-			self.grid[x][y] = colors[name]
-		end
-		self.object:set_properties({textures = { to_imagestring(self.grid, self.res) }})
-
-		self.x0 = x
-		self.y0 = y
-
-		local wielded = puncher:get_wielded_item()
-		wielded:add_wear(65535/256)
-		puncher:set_wielded_item(wielded)
+     local wielded = puncher:get_wielded_item()
+     wielded:add_wear(65535/256)
+     puncher:set_wielded_item(wielded)
 	end,
 
 	on_activate = function(self, staticdata)
@@ -353,14 +343,12 @@ minetest.register_node("painting:easel", {
 	groups = { snappy = 2, choppy = 2, oddly_breakable_by_hand = 2 },
 
 	on_punch = function(pos, node, player)
-		local wielded_raw = player:get_wielded_item():get_name()
-		wielded = string.split(wielded_raw, "_")
-
-		local name = wielded[1]
-		if name ~= "painting:canvas" then
+    local wield_name = player:get_wielded_item():get_name()
+    local name, res = string.match(wielded_name, "^([^_]+)_([^_]+)")
+		if name ~= "painting:canvas" then  -- Can only put the canvas on there.
 			return
 		end
-		local res = tonumber(wielded[2])
+		local res = tonumber(res)
 
 		local meta = minetest.get_meta(pos)
 		local fd = node.param2
