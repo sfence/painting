@@ -139,7 +139,7 @@ local paintbox = {
 }
 
 -- Figure where it hits the canvas, in fraction given position and direction.
-local function figure_paint_pos(pos, d,od, ppos, l)
+local function figure_paint_pos_raw(pos, d,od, ppos, l)
    --get player eye level
    --see player.h line 129
   ppos.y = ppos.y + 1.625
@@ -151,6 +151,13 @@ local function figure_paint_pos(pos, d,od, ppos, l)
   pos = vector.add(pos, {x=off*od.x, y=off, z=off*od.z})
   p = vector.subtract(p, pos)
   return math.abs(p.x + p.z), 1 - p.y
+end
+
+local function figure_paint_pos(self, puncher)
+   local x,y = figure_paint_pos_raw(self.object:getpos(),
+                                    dirs[self.fd], dirs[(self.fd + 1) % 4],
+                                    puncher:getpos(), puncher:get_look_dir())
+   return math.floor(self.res*clamp(x, 0, 1)), math.floor(self.res*clamp(y, 0, 1))
 end
 
 minetest.register_entity("painting:paintent", {
@@ -165,11 +172,8 @@ minetest.register_entity("painting:paintent", {
         return
      end
 
-     local x,y = figure_paint_pos(self.object:getpos(),
-                                  dirs[self.fd], dirs[(self.fd + 1) % 4],
-                                  puncher:getpos(), puncher:get_look_dir())
-
-     local x,y = math.floor(self.res*clamp(x, 0, 1)), math.floor(self.res*clamp(y, 0, 1))
+     assert(self.object)
+     local x,y = figure_paint_pos(self, puncher)
 
      local x0 = self.x0
      if puncher:get_player_control().sneak and x0 then
@@ -344,7 +348,7 @@ minetest.register_node("painting:easel", {
 
 	on_punch = function(pos, node, player)
     local wield_name = player:get_wielded_item():get_name()
-    local name, res = string.match(wielded_name, "^([^_]+)_([^_]+)")
+    local name, res = string.match(wield_name, "^([^_]+)_([^_]+)")
 		if name ~= "painting:canvas" then  -- Can only put the canvas on there.
 			return
 		end
