@@ -177,6 +177,29 @@ local paintbox = {
 	[1] = { 0,-0.5,-0.5,0,0.5,0.5 }
 }
 
+local cur_version = 2
+local function update_version(self)
+   if self.version ~= nil then
+      minetest.log("info", "Don't recognize this as older version?(mod:painting)")
+   end
+
+   if self.version == nil then
+      -- Hopefully, it cannot with total certainty be retrieved.
+      local old_revcolors = {}
+      for color in pairs(textures) do
+         table.insert(old_revcolors, color)
+      end
+
+      for x = 0,self.res-1 do
+         for y = 0,self.res-1 do
+            -- Turn old index into color name, into new index.
+            self.grid[x][y] = colors[old_revcolors[self.grid[x][y]]]
+         end
+      end
+   end -- Update the version, otherwise we'll enbd up doing it twice.
+   self.version = cur_version
+end
+
 -- Painting as being painted.
 minetest.register_entity("painting:paintent", {
 	collisionbox = { 0, 0, 0, 0, 0, 0 },
@@ -207,6 +230,10 @@ minetest.register_entity("painting:paintent", {
 		self.x0, self.y0 = data.x0, data.y0
 		self.res = data.res
 		self.grid = data.grid
+    self.version = data.version
+    if self.version ~= cur_version then  -- Note: must be before `to_imagestring`
+       update_version(self)
+    end
 		self.object:set_properties{ textures = { to_imagestring(self.grid, self.res) }}
 		if not self.fd then
 			return
@@ -374,6 +401,7 @@ minetest.register_node("painting:easel", {
 		p.object:set_properties{ collisionbox = paintbox[fd%2] }
 		p.object:set_armor_groups{immortal=1}
 		p.object:setyaw(math.pi * fd / -2)
+    p.version = cur_version -- Otherwise it will try update and break it.
 		local res = tonumber(res) -- Was still string from matching.
 		p.grid = initgrid(res)
 		p.res = res
