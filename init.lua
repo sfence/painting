@@ -11,6 +11,7 @@
 -- this texture is created by minetests internal image
 -- compositing engine (see tile.cpp).
 
+-- Edited by Jasper den Ouden (a few commits now)
 
 dofile(minetest.get_modpath("painting").."/crafts.lua")
 
@@ -53,7 +54,7 @@ local function to_imagestring(data, res)
 	local t,n = {"[combine:", res, "x", res, ":"},6
 	for y = 0, res - 1 do
 		for x = 0, res - 1 do
-			t[n] = x..","..y.."="..revcolors[ data[x][y] ]..".png:"
+       t[n] = x..","..y.."=".. revcolors[ data[x][y] ] ..".png:"
 			n = n+1
 		end
 	end
@@ -160,6 +161,22 @@ local function figure_paint_pos(self, puncher)
    return math.floor(self.res*clamp(x, 0, 1)), math.floor(self.res*clamp(y, 0, 1))
 end
 
+local function draw_input(self, name, x,y, as_line)
+   local x0 = self.x0
+   if as_line and x0 then -- Draw line if requested *and* have a previous position.
+      local y0 = self.y0
+      local line = vector.twoline(x0-x, y0-y)  -- This figures how to do the line.
+      for _,coord in pairs(line) do
+         self.grid[x+coord[1]][y+coord[2]] = colors[name]
+      end
+   else
+      self.grid[x][y] = colors[name]
+   end
+   self.x0, self.y0 = x, y -- Update previous position.
+   -- Actually update the grid.
+   self.object:set_properties({textures = { to_imagestring(self.grid, self.res) }})
+end
+
 minetest.register_entity("painting:paintent", {
 	collisionbox = { 0, 0, 0, 0, 0, 0 },
 	visual = "upright_sprite",
@@ -175,22 +192,9 @@ minetest.register_entity("painting:paintent", {
      assert(self.object)
      local x,y = figure_paint_pos(self, puncher)
 
-     local x0 = self.x0
-     if puncher:get_player_control().sneak and x0 then
-        local y0 = self.y0
-        local line = vector.twoline(x0-x, y0-y)
-        for _,coord in pairs(line) do
-           self.grid[x+coord[1]][y+coord[2]] = colors[name]
-        end
-     else
-        self.grid[x][y] = colors[name]
-     end
-     self.object:set_properties({textures = { to_imagestring(self.grid, self.res) }})
+     draw_input(self, name, x,y, puncher:get_player_control().sneak)
 
-     self.x0 = x
-     self.y0 = y
-
-     local wielded = puncher:get_wielded_item()
+     local wielded = puncher:get_wielded_item()  -- Wear the tool.
      wielded:add_wear(65535/256)
      puncher:set_wielded_item(wielded)
 	end,
@@ -201,8 +205,7 @@ minetest.register_entity("painting:paintent", {
 			return
 		end
 		self.fd = data.fd
-		self.x0 = data.x0
-		self.y0 = data.y0
+		self.x0, self.y0 = data.x0, data.y0
 		self.res = data.res
 		self.grid = data.grid
 		self.object:set_properties({ textures = { to_imagestring(self.grid, self.res) }})
@@ -214,8 +217,9 @@ minetest.register_entity("painting:paintent", {
 	end,
 
 	get_staticdata = function(self)
-		local data = { fd = self.fd, res = self.res, grid = self.grid, x0 = self.x0, y0 = self.y0 }
-		return minetest.serialize(data)
+     local data = { fd = self.fd, res = self.res, grid = self.grid,
+                    x0 = self.x0, y0 = self.y0 }
+     return minetest.serialize(data)
 	end
 })
 
