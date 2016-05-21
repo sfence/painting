@@ -44,6 +44,7 @@ local picbox = {
 local current_version = "nopairs"
 local legacy = {}
 
+-- puts the version before the compressed data
 local function get_metastring(data)
 	return current_version.."(version)"..data
 end
@@ -101,7 +102,7 @@ minetest.register_node("painting:pic", {
 	--handle that right below, don't drop anything
 	drop = "",
 
-	after_dig_node=function(pos, _, oldmetadata, digger)
+	after_dig_node = function(pos, _, oldmetadata, digger)
 		--find and remove the entity
 		for _,e in pairs(minetest.get_objects_inside_radius(pos, 0.5)) do
 			if e:get_luaentity().name == "painting:picent" then
@@ -138,7 +139,7 @@ minetest.register_entity("painting:picent", {
 		end
 		self.object:set_properties{textures = { to_imagestring(data.grid, data.res) }}
 		if data.version ~= current_version then
-			minetest.log("action", "[painting] updating data")
+			minetest.log("legacy", "[painting] updating placed picture data")
 			data.version = current_version
 			data = minetest.compress(
 				minetest.serialize(data)
@@ -459,9 +460,13 @@ for i, color in ipairs(revcolors) do
 	colors[color] = i
 end
 
+
+-- legacy
+
 minetest.register_alias("easel", "painting:easel")
 minetest.register_alias("canvas", "painting:canvas_16")
 
+-- fixes the colours which were set by pairs
 local function fix_eldest_grid(data)
 	for y in pairs(data) do
 		local xs = data[y]
@@ -473,6 +478,7 @@ local function fix_eldest_grid(data)
 	return data
 end
 
+-- possibly updates grid
 function legacy.fix_grid(grid, version)
 	if version == current_version then
 		return
@@ -483,9 +489,12 @@ function legacy.fix_grid(grid, version)
 		return
 	end--]]
 
+	minetest.log("legacy", "[painting] updating grid")
+
 	fix_eldest_grid(grid)
 end
 
+-- gets the compressed data from meta
 function legacy.load_itemmeta(data)
 	local vend = data:find"(version)"
 	if not vend then -- the oldest version
@@ -493,6 +502,7 @@ function legacy.load_itemmeta(data)
 		if t.version then
 			minetest.log("error", "[painting] this musn't happen!")
 		end
+		minetest.log("legacy", "[painting] updating painting meta")
 		legacy.fix_grid(t.grid)
 		return minetest.compress(minetest.serialize(t))
 	end
