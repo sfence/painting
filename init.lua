@@ -29,9 +29,10 @@ local textures = {
 local colors = {}
 
 local revcolors = {
-   "darkgreen", "magenta", "blue", "cyan", "grey", "red", "pink", "darkgrey",
-   "violet", "black", "green", "brown", "yellow", "orange", "white",
+	"white", "darkgreen", "grey", "red", "brown", "cyan", "orange", "violet",
+	"darkgrey", "pink", "green", "magenta", "yellow", "black", "blue"
 }
+
 
 local thickness = 0.1
 
@@ -358,8 +359,10 @@ minetest.register_node("painting:easel", {
 			return
 		end
 
+		local meta = minetest.get_meta(pos)
 		pos.y = pos.y+1
 		if minetest.get_node(pos).name ~= "air" then
+			-- this is not likely going to happen
 			return
 		end
 		local fd = node.param2
@@ -378,7 +381,7 @@ minetest.register_node("painting:easel", {
 		p.res = res
 		p.fd = fd
 
-		minetest.get_meta(pos):set_int("has_canvas", 1)
+		meta:set_int("has_canvas", 1)
 		local itemstack = ItemStack(wielded_raw)
 		player:get_inventory():remove_item("main", itemstack)
 	end,
