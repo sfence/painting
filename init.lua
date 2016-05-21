@@ -59,14 +59,14 @@ local function to_imagestring(data, res)
 	local t,n = {"[combine:", res, "x", res, ":"},6
 	for y = 0, res - 1 do
 		for x = 0, res - 1 do
-       t[n] = x..","..y.."=".. (revcolors[ data[x][y] ] or "white") ..".png:"
+			t[n] = x..","..y.."=".. (revcolors[ data[x][y] ] or "white") ..".png:"
 			n = n+1
 		end
 	end
 	return table.concat(t)
 end
 
-local function dot(v, w)  -- Inproduct.
+local function dot(v, w)	-- Inproduct.
 	return	v.x * w.x + v.y * w.y + v.z * w.z
 end
 
@@ -76,7 +76,7 @@ local function intersect(pos, dir, origin, normal)
 end
 
 local function clamp(x, min,max)
-   return math.max(math.min(x, max),min)
+	return math.max(math.min(x, max),min)
 end
 
 minetest.register_node("painting:pic", {
@@ -89,8 +89,8 @@ minetest.register_node("painting:pic", {
 	paramtype2 = "facedir",
 	node_box = picbox,
 	selection_box = picbox,
-	groups = { snappy = 2, choppy = 2, oddly_breakable_by_hand = 2,
-             not_in_creative_inventory=1},
+	groups = {snappy = 2, choppy = 2, oddly_breakable_by_hand = 2,
+		not_in_creative_inventory=1},
 
 	--handle that right below, don't drop anything
 	drop = "",
@@ -123,27 +123,27 @@ minetest.register_entity("painting:picent", {
 		local meta = minetest.get_meta(pos)
 		local data = minetest.deserialize(meta:get_string("painting:picturedata"))
 		if data and data.grid then
-       self.object:set_properties{textures = { to_imagestring(data.grid, data.res) }}
-    end
+			self.object:set_properties{textures = { to_imagestring(data.grid, data.res) }}
+		end
 	end
 })
 
 -- Figure where it hits the canvas, in fraction given position and direction.
 local function figure_paint_pos_raw(pos, d,od, ppos, l)
-   --get player eye level, see player.h line 129
-   local player_eye_h = 1.625
-  ppos.y = ppos.y + player_eye_h
+	--get player eye level, see player.h line 129
+	local player_eye_h = 1.625
+	ppos.y = ppos.y + player_eye_h
 
-  local normal = { x = d.x, y = 0, z = d.z }
-  local p = intersect(ppos, l, pos, normal)
+	local normal = { x = d.x, y = 0, z = d.z }
+	local p = intersect(ppos, l, pos, normal)
 
-  local off = -0.5
-  pos = vector.add(pos, {x=off*od.x, y=off, z=off*od.z})
-  p = vector.subtract(p, pos)
-  return math.abs(p.x + p.z), 1 - p.y
+	local off = -0.5
+	pos = vector.add(pos, {x=off*od.x, y=off, z=off*od.z})
+	p = vector.subtract(p, pos)
+	return math.abs(p.x + p.z), 1 - p.y
 end
 
-local dirs = {  -- Directions the painting may be.
+local dirs = {	-- Directions the painting may be.
 	[0] = { x = 0, z = 1 },
 	[1] = { x = 1, z = 0 },
 	[2] = { x = 0, z =-1 },
@@ -151,26 +151,26 @@ local dirs = {  -- Directions the painting may be.
 }
 -- .. idem .. given self and puncher.
 local function figure_paint_pos(self, puncher)
-   local x,y = figure_paint_pos_raw(self.object:getpos(),
-                                    dirs[self.fd], dirs[(self.fd + 1) % 4],
-                                    puncher:getpos(), puncher:get_look_dir())
-   return math.floor(self.res*clamp(x, 0, 1)), math.floor(self.res*clamp(y, 0, 1))
+	local x,y = figure_paint_pos_raw(self.object:getpos(),
+		dirs[self.fd], dirs[(self.fd + 1) % 4],
+		puncher:getpos(), puncher:get_look_dir())
+	return math.floor(self.res*clamp(x, 0, 1)), math.floor(self.res*clamp(y, 0, 1))
 end
 
 local function draw_input(self, name, x,y, as_line)
-   local x0 = self.x0
-   if as_line and x0 then -- Draw line if requested *and* have a previous position.
-      local y0 = self.y0
-      local line = vector.twoline(x0-x, y0-y)  -- This figures how to do the line.
-      for _,coord in pairs(line) do
-         self.grid[x+coord[1]][y+coord[2]] = colors[name]
-      end
-   else  -- Draw just single point.
-      self.grid[x][y] = colors[name]
-   end
-   self.x0, self.y0 = x, y -- Update previous position.
-   -- Actually update the grid.
-   self.object:set_properties{textures = { to_imagestring(self.grid, self.res) }}
+	local x0 = self.x0
+	if as_line and x0 then -- Draw line if requested *and* have a previous position.
+		local y0 = self.y0
+		local line = vector.twoline(x0-x, y0-y)	-- This figures how to do the line.
+		for _,coord in pairs(line) do
+			self.grid[x+coord[1]][y+coord[2]] = colors[name]
+		end
+	else	-- Draw just single point.
+		self.grid[x][y] = colors[name]
+	end
+	self.x0, self.y0 = x, y -- Update previous position.
+	-- Actually update the grid.
+	self.object:set_properties{textures = { to_imagestring(self.grid, self.res) }}
 end
 
 local paintbox = {
@@ -186,18 +186,18 @@ minetest.register_entity("painting:paintent", {
 
 	on_punch = function(self, puncher)
 		--check for brush.
-     local name = string.match(puncher:get_wielded_item():get_name(), "_([^_]*)")
-     if not textures[name] then  -- Not one of the brushes; can't paint.
-        return
-     end
+		local name = string.match(puncher:get_wielded_item():get_name(), "_([^_]*)")
+		if not textures[name] then	-- Not one of the brushes; can't paint.
+			return
+		end
 
-     assert(self.object)
-     local x,y = figure_paint_pos(self, puncher)
-     draw_input(self, name, x,y, puncher:get_player_control().sneak)
+		assert(self.object)
+		local x,y = figure_paint_pos(self, puncher)
+		draw_input(self, name, x,y, puncher:get_player_control().sneak)
 
-     local wielded = puncher:get_wielded_item()  -- Wear down the tool.
-     wielded:add_wear(65535/256)
-     puncher:set_wielded_item(wielded)
+		local wielded = puncher:get_wielded_item()	-- Wear down the tool.
+		wielded:add_wear(65535/256)
+		puncher:set_wielded_item(wielded)
 	end,
 
 	on_activate = function(self, staticdata)
@@ -218,9 +218,8 @@ minetest.register_entity("painting:paintent", {
 	end,
 
 	get_staticdata = function(self)
-     local data = { fd = self.fd, res = self.res, grid = self.grid,
-                    x0 = self.x0, y0 = self.y0 }
-     return minetest.serialize(data)
+		return minetest.serialize{fd = self.fd, res = self.res,
+			grid = self.grid, x0 = self.x0, y0 = self.y0}
 	end
 })
 
@@ -276,7 +275,7 @@ minetest.register_craftitem("painting:paintedcanvas", {
 --canvas inventory items
 for i = 4,6 do
 	minetest.register_craftitem("painting:canvas_"..2^i, {
-    description = "Canvas(" .. 2^i .. ")",
+		description = "Canvas(" .. 2^i .. ")",
 		inventory_image = "default_paper.png",
 		stack_max = 99,
 	})
@@ -298,8 +297,8 @@ minetest.register_node("painting:canvasnode", {
 	paramtype2 = "facedir",
 	node_box = canvasbox,
 	selection_box = canvasbox,
-	groups = { snappy = 2, choppy = 2, oddly_breakable_by_hand = 2,
-             not_in_creative_inventory=1 },
+	groups = {snappy = 2, choppy = 2, oddly_breakable_by_hand = 2,
+		not_in_creative_inventory=1},
 
 	drop = "",
 
@@ -319,9 +318,11 @@ minetest.register_node("painting:canvasnode", {
 		minetest.get_meta(pos):set_int("has_canvas", 0)
 
 		if data.grid then
-			local item = { name = "painting:paintedcanvas", count = 1,
-                     metadata = minetest.serialize(data) }
-			digger:get_inventory():add_item("main", item)
+			digger:get_inventory():add_item("main", {
+				name = "painting:paintedcanvas",
+				count = 1,
+				metadata = minetest.serialize(data)
+			})
 		end
 	end
 })
@@ -353,9 +354,9 @@ minetest.register_node("painting:easel", {
 	groups = { snappy = 2, choppy = 2, oddly_breakable_by_hand = 2 },
 
 	on_punch = function(pos, node, player)
-    local wield_name = player:get_wielded_item():get_name()
-    local name, res = string.match(wield_name, "^([^_]+)_([^_]+)")
-		if name ~= "painting:canvas" then  -- Can only put the canvas on there.
+		local wield_name = player:get_wielded_item():get_name()
+		local name, res = string.match(wield_name, "^([^_]+)_([^_]+)")
+		if name ~= "painting:canvas" then	-- Can only put the canvas on there.
 			return
 		end
 
