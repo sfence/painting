@@ -475,7 +475,7 @@ for color, _ in pairs(textures) do
 	vage_revcolours[#vage_revcolours+1] = color
 	local brush_new = table_copy(brush)
 	brush_new.description = color:gsub("^%l", string.upper).." brush"
-	brush_new.inventory_image = "painting_brush_"..color..".png"
+	brush_new.inventory_image = "painting_brush_stem.png^(painting_brush_head.png^[colorize:#"..hexcols[color]..":255)^painting_brush_head.png"
 	minetest.register_tool("painting:brush_"..color, brush_new)
 	minetest.register_craft{
 		output = "painting:brush_"..color,
