@@ -27,7 +27,11 @@ local textures = {
 }
 
 local colors = {}
-local revcolors = {}
+
+local revcolors = {
+   "darkgreen", "magenta", "blue", "cyan", "grey", "red", "pink", "darkgrey",
+   "violet", "black", "green", "brown", "yellow", "orange", "white",
+}
 
 local thickness = 0.1
 
@@ -54,7 +58,7 @@ local function to_imagestring(data, res)
 	local t,n = {"[combine:", res, "x", res, ":"},6
 	for y = 0, res - 1 do
 		for x = 0, res - 1 do
-       t[n] = x..","..y.."=".. revcolors[ data[x][y] ] ..".png:"
+       t[n] = x..","..y.."=".. (revcolors[ data[x][y] ] or "white") ..".png:"
 			n = n+1
 		end
 	end
@@ -174,7 +178,7 @@ local function draw_input(self, name, x,y, as_line)
    end
    self.x0, self.y0 = x, y -- Update previous position.
    -- Actually update the grid.
-   self.object:set_properties({textures = { to_imagestring(self.grid, self.res) }})
+   self.object:set_properties{textures = { to_imagestring(self.grid, self.res) }}
 end
 
 minetest.register_entity("painting:paintent", {
@@ -408,7 +412,7 @@ local brush = {
 }
 
 for color, _ in pairs(textures) do
-	table.insert(revcolors, color)
+--	table.insert(revcolors, color) -- I don't think you should depend on `pairs` order.
 	local brush_new = table_copy(brush)
 	brush_new.description = color:gsub("^%l", string.upper).." brush"
 	brush_new.inventory_image = "painting_brush_"..color..".png"
