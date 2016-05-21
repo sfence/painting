@@ -33,7 +33,6 @@ local revcolors = {
 	"darkgrey", "pink", "green", "magenta", "yellow", "black", "blue"
 }
 
-
 local thickness = 0.1
 
 -- picture node
@@ -41,6 +40,13 @@ local picbox = {
 	type = "fixed",
 	fixed = { -0.499, -0.499, 0.499, 0.499, 0.499, 0.499 - thickness }
 }
+
+local current_version = "nopairs"
+local legacy = {}
+
+local function get_metastring(data)
+	return current_version.."(version)"..data
+end
 
 -- Initiate a white grid.
 local function initgrid(res)
@@ -103,11 +109,13 @@ minetest.register_node("painting:pic", {
 			end
 		end
 
+		local data = legacy.load_itemmeta(oldmetadata.fields["painting:picturedata"])
+
 		--put picture data back into inventory item
 		digger:get_inventory():add_item("main", {
 			name = "painting:paintedcanvas",
 			count = 1,
-			metadata = oldmetadata.fields["painting:picturedata"]
+			metadata = get_metastring(data)
 		})
 	end
 })
@@ -120,10 +128,22 @@ minetest.register_entity("painting:picent", {
 
 	on_activate = function(self, staticdata)
 		local pos = self.object:getpos()
-		local meta = minetest.get_meta(pos)
-		local data = minetest.deserialize(meta:get_string("painting:picturedata"))
-		if data and data.grid then
-			self.object:set_properties{textures = { to_imagestring(data.grid, data.res) }}
+		local data = legacy.load_itemmeta(minetest.get_meta(pos):get_string("painting:picturedata"))
+		data = minetest.deserialize(
+			minetest.decompress(data)
+		)
+		if not data
+		or not data.grid then
+			return
+		end
+		self.object:set_properties{textures = { to_imagestring(data.grid, data.res) }}
+		if data.version ~= current_version then
+			minetest.log("action", "[painting] updating data")
+			data.version = current_version
+			data = minetest.compress(
+				minetest.serialize(data)
+			)
+			minetest.get_meta(pos):set_string("painting:picturedata", get_metastring(data))
 		end
 	end
 })
@@ -208,7 +228,9 @@ minetest.register_entity("painting:paintent", {
 		self.fd = data.fd
 		self.x0, self.y0 = data.x0, data.y0
 		self.res = data.res
+		self.version = data.version
 		self.grid = data.grid
+		legacy.fix_grid(self.grid, self.version)
 		self.object:set_properties{ textures = { to_imagestring(self.grid, self.res) }}
 		if not self.fd then
 			return
@@ -219,7 +241,8 @@ minetest.register_entity("painting:paintent", {
 
 	get_staticdata = function(self)
 		return minetest.serialize{fd = self.fd, res = self.res,
-			grid = self.grid, x0 = self.x0, y0 = self.y0}
+			grid = self.grid, x0 = self.x0, y0 = self.y0, version = self.version
+		}
 	end
 })
 
@@ -252,8 +275,8 @@ minetest.register_craftitem("painting:paintedcanvas", {
 		minetest.add_node(pos, {name = "painting:pic", param2 = fd})
 
 		--save metadata
-		local data = itemstack:get_metadata()
-		minetest.get_meta(pos):set_string("painting:picturedata", data)
+		local data = legacy.load_itemmeta(itemstack:get_metadata())
+		minetest.get_meta(pos):set_string("painting:picturedata", get_metastring(data))
 
 		--add entity
 		dir = dirs[fd]
@@ -262,11 +285,11 @@ minetest.register_craftitem("painting:paintedcanvas", {
 		pos.x = pos.x + dir.x * off
 		pos.z = pos.z + dir.z * off
 
-		data = minetest.deserialize(data)
+		data = minetest.deserialize(minetest.decompress(data))
 
-		local p = minetest.add_entity(pos, "painting:picent"):get_luaentity()
-		p.object:set_properties{ textures = { to_imagestring(data.grid, data.res) }}
-		p.object:setyaw(math.pi * fd / -2)
+		local obj = minetest.add_entity(pos, "painting:picent")
+		obj:set_properties{ textures = { to_imagestring(data.grid, data.res) }}
+		obj:setyaw(math.pi * fd / -2)
 
 		return ItemStack("")
 	end
@@ -309,21 +332,25 @@ minetest.register_node("painting:canvasnode", {
 			e = e:get_luaentity()
 			if e.grid then
 				data.grid = e.grid
+				data.version = e.version
 				data.res = e.res
+				e.object:remove()
+				break
 			end
-			e.object:remove()
 		end
 
 		pos.y = pos.y-1
 		minetest.get_meta(pos):set_int("has_canvas", 0)
 
-		if data.grid then
-			digger:get_inventory():add_item("main", {
-				name = "painting:paintedcanvas",
-				count = 1,
-				metadata = minetest.serialize(data)
-			})
+		if not data.grid then
+			return
 		end
+		legacy.fix_grid(data.grid, data.version)
+		digger:get_inventory():add_item("main", {
+			name = "painting:paintedcanvas",
+			count = 1,
+			metadata = get_metastring(minetest.compress(minetest.serialize(data)))
+		})
 	end
 })
 
@@ -373,18 +400,19 @@ minetest.register_node("painting:easel", {
 		pos.x = pos.x - 0.01 * dir.x
 		pos.z = pos.z - 0.01 * dir.z
 
-		local p = minetest.add_entity(pos, "painting:paintent"):get_luaentity()
-		p.object:set_properties{ collisionbox = paintbox[fd%2] }
-		p.object:set_armor_groups{immortal=1}
-		p.object:setyaw(math.pi * fd / -2)
+		local obj = minetest.add_entity(pos, "painting:paintent")
+		obj:set_properties{ collisionbox = paintbox[fd%2] }
+		obj:set_armor_groups{immortal=1}
+		obj:setyaw(math.pi * fd / -2)
 		local res = tonumber(res) -- Was still string from matching.
-		p.grid = initgrid(res)
-		p.res = res
-		p.fd = fd
+		local ent = obj:get_luaentity()
+		ent.grid = initgrid(res)
+		ent.version = current_version
+		ent.res = res
+		ent.fd = fd
 
 		meta:set_int("has_canvas", 1)
-		local itemstack = ItemStack(wielded_raw)
-		player:get_inventory():remove_item("main", itemstack)
+		player:get_inventory():remove_item("main", ItemStack(wield_name))
 	end,
 
 	can_dig = function(pos)
@@ -410,8 +438,9 @@ local brush = {
 	}
 }
 
+local vage_revcolours = {} -- colours in pairs order
 for color, _ in pairs(textures) do
---	table.insert(revcolors, color) -- I don't think you should depend on `pairs` order.
+	vage_revcolours[#vage_revcolours+1] = color
 	local brush_new = table_copy(brush)
 	brush_new.description = color:gsub("^%l", string.upper).." brush"
 	brush_new.inventory_image = "painting_brush_"..color..".png"
@@ -432,6 +461,47 @@ end
 
 minetest.register_alias("easel", "painting:easel")
 minetest.register_alias("canvas", "painting:canvas_16")
+
+local function fix_eldest_grid(data)
+	for y in pairs(data) do
+		local xs = data[y]
+		for x in pairs(xs) do
+			-- it was done in pairs order
+			xs[x] = colors[vage_revcolours[xs[x]]]
+		end
+	end
+	return data
+end
+
+function legacy.fix_grid(grid, version)
+	if version == current_version then
+		return
+	end
+
+	--[[
+	if version == "nopairs" then
+		return
+	end--]]
+
+	fix_eldest_grid(grid)
+end
+
+function legacy.load_itemmeta(data)
+	local vend = data:find"(version)"
+	if not vend then -- the oldest version
+		local t = minetest.deserialize(data)
+		if t.version then
+			minetest.log("error", "[painting] this musn't happen!")
+		end
+		legacy.fix_grid(t.grid)
+		return minetest.compress(minetest.serialize(t))
+	end
+	local version = data:sub(1, vend-2)
+	data = data:sub(vend+8)
+	if version == current_version then
+		return data
+	end
+end
 
 --[[ allows using many colours, doesn't work
 function to_imagestring(data, res)
