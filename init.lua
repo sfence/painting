@@ -190,7 +190,6 @@ minetest.register_entity("painting:paintent", {
         return
      end
 
-     assert(self.object)
      local x,y = figure_paint_pos(self, puncher)
      draw_input(self, name, x,y, puncher:get_player_control().sneak)
 
@@ -231,7 +230,8 @@ minetest.register_craftitem("painting:paintedcanvas", {
 	description = "Painted Canvas",
 	inventory_image = "painted.png",
 	stack_max = 1,
-	groups = { snappy = 2, choppy = 2, oddly_breakable_by_hand = 2, not_in_creative_inventory=1 },
+	groups = { snappy = 2, choppy = 2,
+             oddly_breakable_by_hand = 2, not_in_creative_inventory=1 },
 
 	on_place = function(itemstack, placer, pointed_thing)
 		--place node
@@ -358,6 +358,7 @@ minetest.register_node("painting:easel", {
 			return
 		end
 
+    local meta = minetest.get_meta(pos)  --(position as unchanged)
 		pos.y = pos.y+1
 		if minetest.get_node(pos).name ~= "air" then
 			return
@@ -378,7 +379,7 @@ minetest.register_node("painting:easel", {
 		p.res = res
 		p.fd = fd
 
-		minetest.get_meta(pos):set_int("has_canvas", 1)
+		meta:set_int("has_canvas", 1)
 		local itemstack = ItemStack(wielded_raw)
 		player:get_inventory():remove_item("main", itemstack)
 	end,
