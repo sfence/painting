@@ -15,15 +15,15 @@
 
 dofile(minetest.get_modpath("painting").."/crafts.lua")
 
-local textures = {
-	white = "white.png", yellow = "yellow.png",
-	orange = "orange.png", red = "red.png",
-	violet = "violet.png", blue = "blue.png",
-	green = "green.png", magenta = "magenta.png",
-	cyan = "cyan.png", grey = "grey.png",
-	darkgrey = "darkgrey.png", black = "black.png",
-	darkgreen = "darkgreen.png", brown="brown.png",
-	pink = "pink.png"
+local hexcols = {
+	white = "ffffff", yellow = "fff000",
+	orange = "ff6c00", red = "ff0000",
+	violet = "8a00ff", blue = "000cff",
+	green = "0cff00", magenta = "fc00ff",
+	cyan = "00ffea", grey = "bebebe",
+	darkgrey = "7b7b7b", black = "000000",
+	darkgreen = "006400", brown="964b00",
+	pink = "ffc0cb"
 }
 
 local colors = {}
@@ -62,14 +62,34 @@ local function initgrid(res)
 end
 
 local function to_imagestring(data, res)
-	if not data then return end
-	local t,n = {"[combine:", res, "x", res, ":"},6
+	if not data then
+		minetest.log("error", "[painting] missing data")
+		return
+	end
+	local cols = {}
 	for y = 0, res - 1 do
+		local xs = data[y]
 		for x = 0, res - 1 do
-			t[n] = x..","..y.."=".. (revcolors[ data[x][y] ] or "white") ..".png:"
-			n = n+1
+			local col = revcolors[xs[x]]
+			cols[col] = cols[col] or {}
+			cols[col][#cols[col]+1] = {y, x}
 		end
 	end
+	local t,n = {"default_stone.png^"},2
+	local groupopen = "([combine:"..res.."x"..res
+	for colour,ps in pairs(cols) do
+		t[n] = groupopen
+		n = n+1
+		for _,p in pairs(ps) do
+			local y,x = unpack(p)
+			t[n] = ":"..p[1]..","..p[2].."=white.png"
+			n = n+1
+		end
+		t[n] = "^[colorize:#"..hexcols[colour]..")^"
+		n = n+1
+	end
+	n = n-1
+	t[n] = t[n]:sub(1,-2)
 	return table.concat(t)
 end
 
@@ -208,7 +228,7 @@ minetest.register_entity("painting:paintent", {
 	on_punch = function(self, puncher)
 		--check for brush.
 		local name = string.match(puncher:get_wielded_item():get_name(), "_([^_]*)")
-		if not textures[name] then	-- Not one of the brushes; can't paint.
+		if not colors[name] then	-- Not one of the brushes; can't paint.
 			return
 		end
 
@@ -437,6 +457,17 @@ local brush = {
 		max_drop_level=0,
 		groupcaps = {}
 	}
+}
+
+local textures = {
+	white = "white.png", yellow = "yellow.png",
+	orange = "orange.png", red = "red.png",
+	violet = "violet.png", blue = "blue.png",
+	green = "green.png", magenta = "magenta.png",
+	cyan = "cyan.png", grey = "grey.png",
+	darkgrey = "darkgrey.png", black = "black.png",
+	darkgreen = "darkgreen.png", brown="brown.png",
+	pink = "pink.png"
 }
 
 local vage_revcolours = {} -- colours in pairs order
