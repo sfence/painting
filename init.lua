@@ -65,13 +65,6 @@ local function to_imagestring(data, res)
 	return table.concat(t)
 end
 
-local dirs = {  -- Directions the painting may be.
-	[0] = { x = 0, z = 1 },
-	[1] = { x = 1, z = 0 },
-	[2] = { x = 0, z =-1 },
-	[3] = { x =-1, z = 0 }
-}
-
 local function dot(v, w)  -- Inproduct.
 	return	v.x * w.x + v.y * w.y + v.z * w.z
 end
@@ -95,7 +88,8 @@ minetest.register_node("painting:pic", {
 	paramtype2 = "facedir",
 	node_box = picbox,
 	selection_box = picbox,
-	groups = { snappy = 2, choppy = 2, oddly_breakable_by_hand = 2, not_in_creative_inventory=1},
+	groups = { snappy = 2, choppy = 2, oddly_breakable_by_hand = 2,
+             not_in_creative_inventory=1},
 
 	--handle that right below, don't drop anything
 	drop = "",
@@ -126,28 +120,18 @@ minetest.register_entity("painting:picent", {
 	on_activate = function(self, staticdata)
 		local pos = self.object:getpos()
 		local meta = minetest.get_meta(pos)
-		local data = meta:get_string("painting:picturedata")
-		data = minetest.deserialize(data)
-
-		if not data
-		or not data.grid then
-			return
-		end
-
-		self.object:set_properties({textures = { to_imagestring(data.grid, data.res) }})
+		local data = minetest.deserialize(meta:get_string("painting:picturedata"))
+		if data and data.grid then
+       self.object:set_properties{textures = { to_imagestring(data.grid, data.res) }}
+    end
 	end
 })
 
-local paintbox = {
-	[0] = { -0.5,-0.5,0,0.5,0.5,0 },
-	[1] = { 0,-0.5,-0.5,0,0.5,0.5 }
-}
-
 -- Figure where it hits the canvas, in fraction given position and direction.
 local function figure_paint_pos_raw(pos, d,od, ppos, l)
-   --get player eye level
-   --see player.h line 129
-  ppos.y = ppos.y + 1.625
+   --get player eye level, see player.h line 129
+   local player_eye_h = 1.625
+  ppos.y = ppos.y + player_eye_h
 
   local normal = { x = d.x, y = 0, z = d.z }
   local p = intersect(ppos, l, pos, normal)
@@ -158,6 +142,13 @@ local function figure_paint_pos_raw(pos, d,od, ppos, l)
   return math.abs(p.x + p.z), 1 - p.y
 end
 
+local dirs = {  -- Directions the painting may be.
+	[0] = { x = 0, z = 1 },
+	[1] = { x = 1, z = 0 },
+	[2] = { x = 0, z =-1 },
+	[3] = { x =-1, z = 0 }
+}
+-- .. idem .. given self and puncher.
 local function figure_paint_pos(self, puncher)
    local x,y = figure_paint_pos_raw(self.object:getpos(),
                                     dirs[self.fd], dirs[(self.fd + 1) % 4],
@@ -173,7 +164,7 @@ local function draw_input(self, name, x,y, as_line)
       for _,coord in pairs(line) do
          self.grid[x+coord[1]][y+coord[2]] = colors[name]
       end
-   else
+   else  -- Draw just single point.
       self.grid[x][y] = colors[name]
    end
    self.x0, self.y0 = x, y -- Update previous position.
@@ -181,24 +172,29 @@ local function draw_input(self, name, x,y, as_line)
    self.object:set_properties{textures = { to_imagestring(self.grid, self.res) }}
 end
 
+local paintbox = {
+	[0] = { -0.5,-0.5,0,0.5,0.5,0 },
+	[1] = { 0,-0.5,-0.5,0,0.5,0.5 }
+}
+
+-- Painting as being painted.
 minetest.register_entity("painting:paintent", {
 	collisionbox = { 0, 0, 0, 0, 0, 0 },
 	visual = "upright_sprite",
 	textures = { "white.png" },
 
 	on_punch = function(self, puncher)
-		--check for brush
+		--check for brush.
      local name = string.match(puncher:get_wielded_item():get_name(), "_([^_]*)")
-     if not textures[name] then  -- Not one of the painters.
+     if not textures[name] then  -- Not one of the brushes; can't paint.
         return
      end
 
      assert(self.object)
      local x,y = figure_paint_pos(self, puncher)
-
      draw_input(self, name, x,y, puncher:get_player_control().sneak)
 
-     local wielded = puncher:get_wielded_item()  -- Wear the tool.
+     local wielded = puncher:get_wielded_item()  -- Wear down the tool.
      wielded:add_wear(65535/256)
      puncher:set_wielded_item(wielded)
 	end,
@@ -212,12 +208,12 @@ minetest.register_entity("painting:paintent", {
 		self.x0, self.y0 = data.x0, data.y0
 		self.res = data.res
 		self.grid = data.grid
-		self.object:set_properties({ textures = { to_imagestring(self.grid, self.res) }})
+		self.object:set_properties{ textures = { to_imagestring(self.grid, self.res) }}
 		if not self.fd then
 			return
 		end
-		self.object:set_properties({ collisionbox = paintbox[self.fd%2] })
-		self.object:set_armor_groups({immortal=1})
+		self.object:set_properties{ collisionbox = paintbox[self.fd%2] }
+		self.object:set_armor_groups{immortal=1}
 	end,
 
 	get_staticdata = function(self)
@@ -269,7 +265,7 @@ minetest.register_craftitem("painting:paintedcanvas", {
 		data = minetest.deserialize(data)
 
 		local p = minetest.add_entity(pos, "painting:picent"):get_luaentity()
-		p.object:set_properties({ textures = { to_imagestring(data.grid, data.res) }})
+		p.object:set_properties{ textures = { to_imagestring(data.grid, data.res) }}
 		p.object:setyaw(math.pi * fd / -2)
 
 		return ItemStack("")
@@ -279,7 +275,7 @@ minetest.register_craftitem("painting:paintedcanvas", {
 --canvas inventory items
 for i = 4,6 do
 	minetest.register_craftitem("painting:canvas_"..2^i, {
-		description = "Canvas",
+    description = "Canvas(" .. 2^i .. ")",
 		inventory_image = "default_paper.png",
 		stack_max = 99,
 	})
@@ -301,7 +297,8 @@ minetest.register_node("painting:canvasnode", {
 	paramtype2 = "facedir",
 	node_box = canvasbox,
 	selection_box = canvasbox,
-	groups = { snappy = 2, choppy = 2, oddly_breakable_by_hand = 2, not_in_creative_inventory=1 },
+	groups = { snappy = 2, choppy = 2, oddly_breakable_by_hand = 2,
+             not_in_creative_inventory=1 },
 
 	drop = "",
 
@@ -321,15 +318,15 @@ minetest.register_node("painting:canvasnode", {
 		minetest.get_meta(pos):set_int("has_canvas", 0)
 
 		if data.grid then
-			local item = { name = "painting:paintedcanvas", count = 1, metadata = minetest.serialize(data) }
+			local item = { name = "painting:paintedcanvas", count = 1,
+                     metadata = minetest.serialize(data) }
 			digger:get_inventory():add_item("main", item)
 		end
 	end
 })
 
--- easel
-local easelbox = {
-	type="fixed",
+local easelbox = { -- Specifies 3d model.
+	type = "fixed",
 	fixed = {
 		--feet
 		{-0.4, -0.5, -0.5, -0.3, -0.4, 0.5 },
@@ -360,15 +357,12 @@ minetest.register_node("painting:easel", {
 		if name ~= "painting:canvas" then  -- Can only put the canvas on there.
 			return
 		end
-		local res = tonumber(res)
 
-		local meta = minetest.get_meta(pos)
-		local fd = node.param2
 		pos.y = pos.y+1
-
 		if minetest.get_node(pos).name ~= "air" then
 			return
 		end
+		local fd = node.param2
 		minetest.add_node(pos, { name = "painting:canvasnode", param2 = fd})
 
 		local dir = dirs[fd]
@@ -376,14 +370,15 @@ minetest.register_node("painting:easel", {
 		pos.z = pos.z - 0.01 * dir.z
 
 		local p = minetest.add_entity(pos, "painting:paintent"):get_luaentity()
-		p.object:set_properties({ collisionbox = paintbox[fd%2] })
-		p.object:set_armor_groups({immortal=1})
+		p.object:set_properties{ collisionbox = paintbox[fd%2] }
+		p.object:set_armor_groups{immortal=1}
 		p.object:setyaw(math.pi * fd / -2)
+		local res = tonumber(res) -- Was still string from matching.
 		p.grid = initgrid(res)
 		p.res = res
 		p.fd = fd
 
-		meta:set_int("has_canvas", 1)
+		minetest.get_meta(pos):set_int("has_canvas", 1)
 		local itemstack = ItemStack(wielded_raw)
 		player:get_inventory():remove_item("main", itemstack)
 	end,
@@ -417,14 +412,14 @@ for color, _ in pairs(textures) do
 	brush_new.description = color:gsub("^%l", string.upper).." brush"
 	brush_new.inventory_image = "painting_brush_"..color..".png"
 	minetest.register_tool("painting:brush_"..color, brush_new)
-	minetest.register_craft({
+	minetest.register_craft{
 		output = "painting:brush_"..color,
 		recipe = {
 			{"dye:"..color},
 			{"default:stick"},
 			{"default:stick"}
 		}
-	})
+	}
 end
 
 for i, color in ipairs(revcolors) do
