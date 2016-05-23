@@ -71,11 +71,13 @@ local function to_imagestring(data, res)
 		local xs = data[y]
 		for x = 0, res - 1 do
 			local col = revcolors[xs[x]]
-			cols[col] = cols[col] or {}
-			cols[col][#cols[col]+1] = {y, x}
+			if col ~= "white" then
+				cols[col] = cols[col] or {}
+				cols[col][#cols[col]+1] = {y, x}
+			end
 		end
 	end
-	local t,n = {"default_stone.png^"},2
+	local t,n = {""},1
 	local groupopen = "([combine:"..res.."x"..res
 	for colour,ps in pairs(cols) do
 		t[n] = groupopen
@@ -90,6 +92,7 @@ local function to_imagestring(data, res)
 	end
 	n = n-1
 	t[n] = t[n]:sub(1,-2)
+	--print(table.concat(t))
 	return table.concat(t)
 end
 
