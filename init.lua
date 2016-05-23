@@ -71,10 +71,10 @@ local function to_imagestring(data, res)
 		local xs = data[y]
 		for x = 0, res - 1 do
 			local col = revcolors[xs[x]]
-			if col ~= "white" then
+			--if col ~= "white" then
 				cols[col] = cols[col] or {}
 				cols[col][#cols[col]+1] = {y, x}
-			end
+			--end
 		end
 	end
 	local t,n = {},1
@@ -91,6 +91,10 @@ local function to_imagestring(data, res)
 		n = n+1
 	end
 	n = n-1
+	if n == 0 then
+		minetest.log("error", "[painting] no texels")
+		return "white.png"
+	end
 	t[n] = t[n]:sub(1,-2)
 	--print(table.concat(t))
 	return table.concat(t)
