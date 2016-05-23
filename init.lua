@@ -77,7 +77,7 @@ local function to_imagestring(data, res)
 			end
 		end
 	end
-	local t,n = {""},1
+	local t,n = {},1
 	local groupopen = "([combine:"..res.."x"..res
 	for colour,ps in pairs(cols) do
 		t[n] = groupopen
