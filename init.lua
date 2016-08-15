@@ -477,9 +477,8 @@ local textures = {
 	pink = "pink.png"
 }
 
-local vage_revcolours = {} -- colours in pairs order
+local vage_revcolours = {} -- ← colours in pairs order
 for color, _ in pairs(textures) do
-	vage_revcolours[#vage_revcolours+1] = color
 	local brush_new = table_copy(brush)
 	brush_new.description = color:gsub("^%l", string.upper).." brush"
 	brush_new.inventory_image = "painting_brush_stem.png^(painting_brush_head.png^[colorize:#"..hexcols[color]..":255)^painting_brush_head.png"
@@ -492,7 +491,21 @@ for color, _ in pairs(textures) do
 			{"default:stick"}
 		}
 	}
+
+	vage_revcolours[#vage_revcolours+1] = color
 end
+
+-- If you want to use custom pairs order, e.g. if the map is played on a
+-- different pc, uncomment this line:
+
+--print("vage_revcolours = "..dump(vage_revcolours)) error"↑"
+
+-- then load the world with this mod on the original pc in a terminal, after
+-- that put the printed thing ("vage_revcolours = […]}") here ↓
+
+
+
+-- then the mod with the world can be used on other pc
 
 for i, color in ipairs(revcolors) do
 	colors[color] = i
