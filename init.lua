@@ -505,7 +505,8 @@ end
 
 
 
--- then the mod with the world can be used on other pc
+-- then the mod with the world can be used on other pc, of course you need to
+-- have re-commented that line above
 
 for i, color in ipairs(revcolors) do
 	colors[color] = i
