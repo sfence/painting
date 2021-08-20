@@ -1,17 +1,9 @@
 -- painting - in-game painting for minetest
 
--- THIS MOD CODE AND TEXTURES LICENSED
---						<3 TO YOU <3
---		UNDER TERMS OF WTFPL LICENSE
-
--- 2012, 2013, 2014 obneq aka jin xi
-
 -- picture is drawn using a nodebox to draw the canvas
 -- and an entity which has the painting as its texture.
 -- this texture is created by minetests internal image
 -- compositing engine (see tile.cpp).
-
--- Edited by Jasper den Ouden (a few commits now)
 
 painting = {}
 
@@ -317,7 +309,7 @@ minetest.register_craftitem("painting:paintedcanvas", {
 
 		pos.x = pos.x + dir.x * off
 		pos.z = pos.z + dir.z * off
-    
+		
 		data = minetest.deserialize(painting.decompress(data))
 
 		local obj = minetest.add_entity(pos, "painting:picent")

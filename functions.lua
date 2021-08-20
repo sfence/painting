@@ -1,3 +1,4 @@
+-- painting - in-game painting for minetest
 
 function painting.compress(string)
   return minetest.encode_base64(minetest.compress(string, "deflate"))
