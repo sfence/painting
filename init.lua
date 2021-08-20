@@ -13,7 +13,12 @@
 
 -- Edited by Jasper den Ouden (a few commits now)
 
-dofile(minetest.get_modpath(minetest.get_current_modname()).."/crafts.lua")
+painting = {}
+
+local modpath = minetest.get_modpath(minetest.get_current_modname())
+
+dofile(modpath.."/crafts.lua")
+dofile(modpath.."/functions.lua")
 
 local hexcols = {
 	white = "ffffff", yellow = "fff000",
@@ -158,7 +163,7 @@ minetest.register_entity("painting:picent", {
 		local pos = self.object:getpos()
 		local data = legacy.load_itemmeta(minetest.get_meta(pos):get_string("painting:picturedata"))
 		data = minetest.deserialize(
-			minetest.decompress(data)
+			painting.decompress(data)
 		)
 		if not data
 		or not data.grid then
@@ -168,7 +173,7 @@ minetest.register_entity("painting:picent", {
 		if data.version ~= current_version then
 			minetest.log("legacy", "[painting] updating placed picture data")
 			data.version = current_version
-			data = minetest.compress(
+			data = painting.compress(
 				minetest.serialize(data)
 			)
 			minetest.get_meta(pos):set_string("painting:picturedata", get_metastring(data))
@@ -207,7 +212,7 @@ end
 
 local function draw_input(self, name, x,y, as_line)
 	local x0 = self.x0
-	if as_line and x0 then -- Draw line if requested *and* have a previous position.
+	if as_line and x0 and vector.twoline then -- Draw line if requested *and* have a previous position.
 		local y0 = self.y0
 		local line = vector.twoline(x0-x, y0-y)	-- This figures how to do the line.
 		for _,coord in pairs(line) do
@@ -307,13 +312,13 @@ minetest.register_craftitem("painting:paintedcanvas", {
 		minetest.get_meta(pos):set_string("painting:picturedata", get_metastring(data))
 
 		--add entity
-		dir = dirs[fd]
+		local dir = dirs[fd]
 		local off = 0.5 - thickness - 0.01
 
 		pos.x = pos.x + dir.x * off
 		pos.z = pos.z + dir.z * off
-
-		data = minetest.deserialize(minetest.decompress(data))
+    
+		data = minetest.deserialize(painting.decompress(data))
 
 		local obj = minetest.add_entity(pos, "painting:picent")
 		obj:set_properties{ textures = { to_imagestring(data.grid, data.res) }}
@@ -377,7 +382,7 @@ minetest.register_node("painting:canvasnode", {
 		digger:get_inventory():add_item("main", {
 			name = "painting:paintedcanvas",
 			count = 1,
-			metadata = get_metastring(minetest.compress(minetest.serialize(data)))
+			metadata = get_metastring(painting.compress(minetest.serialize(data)))
 		})
 	end
 })
@@ -556,7 +561,7 @@ function legacy.load_itemmeta(data)
 		end
 		minetest.log("legacy", "[painting] updating painting meta")
 		legacy.fix_grid(t.grid)
-		return minetest.compress(minetest.serialize(t))
+		return painting.compress(minetest.serialize(t))
 	end
 	local version = data:sub(1, vend-2)
 	data = data:sub(vend+8)
