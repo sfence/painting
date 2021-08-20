@@ -184,7 +184,7 @@ minetest.register_entity("painting:picent", {
 -- Figure where it hits the canvas, in fraction given position and direction.
 local function figure_paint_pos_raw(pos, d,od, ppos, l)
 	--get player eye level, see player.h line 129
-	local player_eye_h = 1.625
+	local player_eye_h = 1.5 -- 1.625
 	ppos.y = ppos.y + player_eye_h
 
 	local normal = { x = d.x, y = 0, z = d.z }
