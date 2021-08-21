@@ -52,7 +52,7 @@ local function initgrid(res)
 	for x = 0, a do
 		grid[x] = {}
 		for y = 0, a do
-			grid[x][y] = colors["white"]
+			grid[x][y] = hexcols["white"]
 		end
 	end
 	return grid
@@ -67,7 +67,7 @@ local function to_imagestring(data, res)
 	for y = 0, res - 1 do
 		local xs = data[y]
 		for x = 0, res - 1 do
-			local col = revcolors[xs[x]]
+			local col = xs[x]
 			--if col ~= "white" then
 				cols[col] = cols[col] or {}
 				cols[col][#cols[col]+1] = {y, x}
@@ -76,7 +76,7 @@ local function to_imagestring(data, res)
 	end
 	local t,n = {},1
 	local groupopen = "([combine:"..res.."x"..res
-	for colour,ps in pairs(cols) do
+	for hexcolour,ps in pairs(cols) do
 		t[n] = groupopen
 		n = n+1
 		for _,p in pairs(ps) do
@@ -84,7 +84,7 @@ local function to_imagestring(data, res)
 			t[n] = ":"..p[1]..","..p[2].."=white.png"
 			n = n+1
 		end
-		t[n] = "^[colorize:#"..hexcols[colour]..")^"
+		t[n] = "^[colorize:#"..hexcolour..")^"
 		n = n+1
 	end
 	n = n-1
@@ -202,16 +202,16 @@ local function figure_paint_pos(self, puncher)
 	return math.floor(self.res*clamp(x, 0, 1)), math.floor(self.res*clamp(y, 0, 1))
 end
 
-local function draw_input(self, name, x,y, as_line)
+local function draw_input(self, hexcolor, x,y, as_line)
 	local x0 = self.x0
 	if as_line and x0 and vector.twoline then -- Draw line if requested *and* have a previous position.
 		local y0 = self.y0
 		local line = vector.twoline(x0-x, y0-y)	-- This figures how to do the line.
 		for _,coord in pairs(line) do
-			self.grid[x+coord[1]][y+coord[2]] = colors[name]
+			self.grid[x+coord[1]][y+coord[2]] = hexcolor
 		end
 	else	-- Draw just single point.
-		self.grid[x][y] = colors[name]
+		self.grid[x][y] = hexcolor
 	end
 	self.x0, self.y0 = x, y -- Update previous position.
 	-- Actually update the grid.
@@ -232,13 +232,15 @@ minetest.register_entity("painting:paintent", {
 	on_punch = function(self, puncher)
 		--check for brush.
 		local name = string.match(puncher:get_wielded_item():get_name(), "_([^_]*)")
-		if not colors[name] then	-- Not one of the brushes; can't paint.
+		local name = puncher:get_wielded_item():get_name()
+		local def = minetest.registered_items[name]
+		if (not def) or (not def._painting_brush_color) then -- Not one of the brushes; can't paint.
 			return
 		end
 
 		assert(self.object)
 		local x,y = figure_paint_pos(self, puncher)
-		draw_input(self, name, x,y, puncher:get_player_control().sneak)
+		draw_input(self, def._painting_brush_color, x,y, puncher:get_player_control().sneak)
 
 		local wielded = puncher:get_wielded_item()	-- Wear down the tool.
 		wielded:add_wear(65535/256)
@@ -326,6 +328,7 @@ for i = 4,6 do
 		description = "Canvas(" .. 2^i .. ")",
 		inventory_image = "default_paper.png",
 		stack_max = 99,
+		_painting_canvas_resolution = 2^i,
 	})
 end
 
@@ -407,8 +410,8 @@ minetest.register_node("painting:easel", {
 
 	on_punch = function(pos, node, player)
 		local wield_name = player:get_wielded_item():get_name()
-		local name, res = string.match(wield_name, "^([^_]+)_([^_]+)")
-		if name ~= "painting:canvas" then	-- Can only put the canvas on there.
+		local def = minetest.registered_items[wield_name]
+		if (not def) or (not def._painting_canvas_resolution) then	-- Can only put the canvas on there.
 			return
 		end
 
@@ -428,12 +431,11 @@ minetest.register_node("painting:easel", {
 		local obj = minetest.add_entity(pos, "painting:paintent")
 		obj:set_properties{ collisionbox = paintbox[fd%2] }
 		obj:set_armor_groups{immortal=1}
-		obj:setyaw(math.pi * fd / -2)
-		local res = tonumber(res) -- Was still string from matching.
+		obj:set_yaw(math.pi * fd / -2)
 		local ent = obj:get_luaentity()
-		ent.grid = initgrid(res)
+		ent.grid = initgrid(def._painting_canvas_resolution)
 		ent.version = current_version
-		ent.res = res
+		ent.res = def._painting_canvas_resolution
 		ent.fd = fd
 
 		meta:set_int("has_canvas", 1)
@@ -484,6 +486,7 @@ for color, _ in pairs(textures) do
 	local brush_new = table_copy(brush)
 	brush_new.description = color:gsub("^%l", string.upper).." brush"
 	brush_new.inventory_image = "painting_brush_stem.png^(painting_brush_head.png^[colorize:#"..hexcols[color]..":255)^painting_brush_head.png"
+	brush_new._painting_brush_color = hexcols[color]
 	minetest.register_tool("painting:brush_"..color, brush_new)
 	minetest.register_craft{
 		output = "painting:brush_"..color,
