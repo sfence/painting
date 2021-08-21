@@ -174,10 +174,9 @@ minetest.register_entity("painting:picent", {
 })
 
 -- Figure where it hits the canvas, in fraction given position and direction.
-local function figure_paint_pos_raw(pos, d,od, ppos, l)
-	--get player eye level, see player.h line 129
-	local player_eye_h = 1.5 -- 1.625
-	ppos.y = ppos.y + player_eye_h
+
+local function figure_paint_pos_raw(pos, d,od, ppos, l, eye_height)
+	ppos.y = ppos.y + eye_height
 
 	local normal = { x = d.x, y = 0, z = d.z }
 	local p = intersect(ppos, l, pos, normal)
@@ -198,7 +197,8 @@ local dirs = {	-- Directions the painting may be.
 local function figure_paint_pos(self, puncher)
 	local x,y = figure_paint_pos_raw(self.object:getpos(),
 		dirs[self.fd], dirs[(self.fd + 1) % 4],
-		puncher:getpos(), puncher:get_look_dir())
+		puncher:getpos(), puncher:get_look_dir(),
+		puncher:get_properties().eye_height)
 	return math.floor(self.res*clamp(x, 0, 1)), math.floor(self.res*clamp(y, 0, 1))
 end
 
@@ -474,6 +474,11 @@ local textures = {
 	pink = "pink.png"
 }
 
+minetest.register_craftitem("painting:brush", {
+		description = "Brush",
+		inventory_image = "painting_brush_stem.png^(painting_brush_head.png^[colorize:#FFFFFF:128)^painting_brush_head.png",
+	})
+
 local vage_revcolours = {} -- ← colours in pairs order
 for color, _ in pairs(textures) do
 	local brush_new = table_copy(brush)
@@ -484,8 +489,7 @@ for color, _ in pairs(textures) do
 		output = "painting:brush_"..color,
 		recipe = {
 			{"dye:"..color},
-			{"default:stick"},
-			{"default:stick"}
+			{"painting:brush"}
 		}
 	}
 
