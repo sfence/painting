@@ -152,7 +152,7 @@ minetest.register_entity("painting:picent", {
 	textures = { "white.png" },
 
 	on_activate = function(self, staticdata)
-		local pos = self.object:getpos()
+		local pos = self.object:get_pos()
 		local data = legacy.load_itemmeta(minetest.get_meta(pos):get_string("painting:picturedata"))
 		data = minetest.deserialize(
 			painting.decompress(data)
@@ -195,9 +195,9 @@ local dirs = {	-- Directions the painting may be.
 }
 -- .. idem .. given self and puncher.
 local function figure_paint_pos(self, puncher)
-	local x,y = figure_paint_pos_raw(self.object:getpos(),
+	local x,y = figure_paint_pos_raw(self.object:get_pos(),
 		dirs[self.fd], dirs[(self.fd + 1) % 4],
-		puncher:getpos(), puncher:get_look_dir(),
+		puncher:get_pos(), puncher:get_look_dir(),
 		puncher:get_properties().eye_height)
 	return math.floor(self.res*clamp(x, 0, 1)), math.floor(self.res*clamp(y, 0, 1))
 end
@@ -314,7 +314,7 @@ minetest.register_craftitem("painting:paintedcanvas", {
 
 		local obj = minetest.add_entity(pos, "painting:picent")
 		obj:set_properties{ textures = { to_imagestring(data.grid, data.res) }}
-		obj:setyaw(math.pi * fd / -2)
+		obj:set_yaw(math.pi * fd / -2)
 
 		return ItemStack("")
 	end
