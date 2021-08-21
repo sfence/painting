@@ -18,16 +18,25 @@ elseif minetest.get_modpath("hades_core") then
 	items.stick = "hades_core:stick"
 	items.brush_head = "hades_farming:cotton"
 	items.canvas_source = "hades_core:paper"
-  
-  if minetest.get_modpath("hades_extrafarming") then
-    items.brush_head = "hades_extrafarming:cotton"
-  end
-end
-
-if minetest.get_modpath("clothing") then
-	items.canvas_source = "clothing:fabric_white"
-elseif minetest.get_modpath("hades_clothing") then
-	items.canvas_source = "hades_clothing:fabric_white"
+	
+	if minetest.get_modpath("hades_extrafarming") then
+		items.brush_head = "hades_extrafarming:cotton"
+	end
+	if minetest.get_modpath("hades_clothing") then
+		items.canvas_source = "hades_clothing:fabric_white"
+	end
+	if minetest.get_modpath("hades_animals") then
+		local hairball = minetest.settings:get("mobs_hairball")
+		items.brush_head = "mobs:hairball"
+	end
+else
+	if minetest.get_modpath("clothing") then
+		items.canvas_source = "clothing:fabric_white"
+	end
+	if minetest.get_modpath("mobs_animal") then
+		local hairball = minetest.settings:get("mobs_hairball")
+		items.brush_head = "mobs:hairball"
+	end
 end
 
 minetest.register_craft({

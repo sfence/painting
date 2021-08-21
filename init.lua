@@ -18,16 +18,16 @@ local hexcols = {
 	violet = "8a00ff", blue = "000cff",
 	green = "0cff00", magenta = "fc00ff",
 	cyan = "00ffea", grey = "bebebe",
-	darkgrey = "7b7b7b", black = "000000",
-	darkgreen = "006400", brown="964b00",
+	dark_grey = "7b7b7b", black = "000000",
+	dark_green = "006400", brown="964b00",
 	pink = "ffc0cb"
 }
 
 local colors = {}
 
 local revcolors = {
-	"white", "darkgreen", "grey", "red", "brown", "cyan", "orange", "violet",
-	"darkgrey", "pink", "green", "magenta", "yellow", "black", "blue"
+	"white", "dark_green", "grey", "red", "brown", "cyan", "orange", "violet",
+	"dark_grey", "pink", "green", "magenta", "yellow", "black", "blue"
 }
 
 local thickness = 0.1
@@ -471,8 +471,8 @@ local textures = {
 	violet = "violet.png", blue = "blue.png",
 	green = "green.png", magenta = "magenta.png",
 	cyan = "cyan.png", grey = "grey.png",
-	darkgrey = "darkgrey.png", black = "black.png",
-	darkgreen = "darkgreen.png", brown="brown.png",
+	dark_grey = "darkgrey.png", black = "black.png",
+	dark_green = "darkgreen.png", brown="brown.png",
 	pink = "pink.png"
 }
 
@@ -480,6 +480,11 @@ minetest.register_craftitem("painting:brush", {
 		description = "Brush",
 		inventory_image = "painting_brush_stem.png^(painting_brush_head.png^[colorize:#FFFFFF:128)^painting_brush_head.png",
 	})
+
+local dye_prefix = "dye:"
+if minetest.get_modpath("mcl_dye") then
+	dye_prefix = "mcl_dye:"
+end
 
 local vage_revcolours = {} -- ← colours in pairs order
 for color, _ in pairs(textures) do
@@ -491,7 +496,7 @@ for color, _ in pairs(textures) do
 	minetest.register_craft{
 		output = "painting:brush_"..color,
 		recipe = {
-			{"dye:"..color},
+			{dye_prefix..color},
 			{"painting:brush"}
 		}
 	}
