@@ -38,7 +38,7 @@ local picbox = {
 	fixed = { -0.499, -0.499, 0.499, 0.499, 0.499, 0.499 - thickness }
 }
 
-local current_version = "nopairs"
+local current_version = "hexcolors"
 local legacy = {}
 
 -- puts the version before the compressed data
@@ -58,7 +58,7 @@ local function initgrid(res)
 	return grid
 end
 
-local function to_imagestring(data, res)
+function painting.to_imagestring(data, res)
 	if not data then
 		minetest.log("error", "[painting] missing data")
 		return
@@ -137,6 +137,17 @@ minetest.register_node("painting:pic", {
 		local data = legacy.load_itemmeta(oldmetadata.fields["painting:picturedata"])
 
 		--put picture data back into inventory item
+		--[[local picture = ItemStack("painting:paintedcanvas")
+		local meta = picture:get_meta()
+		meta:set_int("resolution", oldmetadata.fields["resolution"])
+		meta:set_string("version", oldmetadata.fields["version"])
+		meta:set_string("grid", oldmetadata.fields["grid"])
+		local inv = digger:get_inventory()
+		if inv:room_for_item("main", picture) then
+			inv:add_item("main", picture)
+		else
+			minetest.add_item(digger:get_pos(), picture)
+		end--]]
 		digger:get_inventory():add_item("main", {
 			name = "painting:paintedcanvas",
 			count = 1,
@@ -161,7 +172,7 @@ minetest.register_entity("painting:picent", {
 		or not data.grid then
 			return
 		end
-		self.object:set_properties{textures = { to_imagestring(data.grid, data.res) }}
+		self.object:set_properties{textures = { painting.to_imagestring(data.grid, data.res) }}
 		if data.version ~= current_version then
 			minetest.log("legacy", "[painting] updating placed picture data")
 			data.version = current_version
@@ -215,7 +226,7 @@ local function draw_input(self, hexcolor, x,y, as_line)
 	end
 	self.x0, self.y0 = x, y -- Update previous position.
 	-- Actually update the grid.
-	self.object:set_properties{textures = { to_imagestring(self.grid, self.res) }}
+	self.object:set_properties{textures = { painting.to_imagestring(self.grid, self.res) }}
 end
 
 local paintbox = {
@@ -258,7 +269,7 @@ minetest.register_entity("painting:paintent", {
 		self.version = data.version
 		self.grid = data.grid
 		legacy.fix_grid(self.grid, self.version)
-		self.object:set_properties{ textures = { to_imagestring(self.grid, self.res) }}
+		self.object:set_properties{ textures = { painting.to_imagestring(self.grid, self.res) }}
 		if not self.fd then
 			return
 		end
@@ -374,11 +385,14 @@ minetest.register_node("painting:canvasnode", {
 			return
 		end
 		legacy.fix_grid(data.grid, data.version)
-		digger:get_inventory():add_item("main", {
+		local item = ItemStack({
 			name = "painting:paintedcanvas",
 			count = 1,
 			metadata = get_metastring(painting.compress(minetest.serialize(data)))
 		})
+		local item_meta = item:get_meta()
+		item_meta:set_int("painting_resolution", data.res)
+		digger:get_inventory():add_item("main", item)
 	end
 })
 
@@ -409,9 +423,10 @@ minetest.register_node("painting:easel", {
 	groups = { snappy = 2, choppy = 2, oddly_breakable_by_hand = 2 },
 
 	on_punch = function(pos, node, player)
-		local wield_name = player:get_wielded_item():get_name()
-		local def = minetest.registered_items[wield_name]
-		if (not def) or (not def._painting_canvas_resolution) then	-- Can only put the canvas on there.
+		local wield_item = player:get_wielded_item()
+		local wield_meta = wield_item:get_meta()
+		local def = wield_item:get_definition()
+		if (not def) or ((not def._painting_canvas_resolution) and (wield_meta:get_int("painting_resolution")==0)) then	-- Can only put the canvas on there.
 			return
 		end
 
@@ -433,13 +448,21 @@ minetest.register_node("painting:easel", {
 		obj:set_armor_groups{immortal=1}
 		obj:set_yaw(math.pi * fd / -2)
 		local ent = obj:get_luaentity()
-		ent.grid = initgrid(def._painting_canvas_resolution)
-		ent.version = current_version
-		ent.res = def._painting_canvas_resolution
+		local data = wield_item:get_metadata();
+		if data and (data~="") then
+			data = minetest.deserialize(painting.decompress(legacy.load_itemmeta(data)))
+			ent.grid = data.grid
+			ent.res = data.res
+			ent.version = data.version
+		else
+			ent.grid = initgrid(def._painting_canvas_resolution)
+			ent.res = def._painting_canvas_resolution
+			ent.version = current_version
+		end
 		ent.fd = fd
 
 		meta:set_int("has_canvas", 1)
-		player:get_inventory():remove_item("main", ItemStack(wield_name))
+		player:get_inventory():remove_item("main", wield_item:take_item())
 	end,
 
 	can_dig = function(pos)
@@ -533,7 +556,17 @@ local function fix_eldest_grid(data)
 		local xs = data[y]
 		for x in pairs(xs) do
 			-- it was done in pairs order
-			xs[x] = colors[vage_revcolours[xs[x]]]
+			xs[x] = hexcolors[vage_revcolours[xs[x]]]
+		end
+	end
+	return data
+end
+local function fix_nopairs_grid(data)
+	for y in pairs(data) do
+		local xs = data[y]
+		for x in pairs(xs) do
+			-- it was done in pairs order
+			xs[x] = hexcolors[revcolors[xs[x]]]
 		end
 	end
 	return data
@@ -545,14 +578,13 @@ function legacy.fix_grid(grid, version)
 		return
 	end
 
-	--[[
-	if version == "nopairs" then
-		return
-	end--]]
-
 	minetest.log("legacy", "[painting] updating grid")
-
-	fix_eldest_grid(grid)
+	
+	if version == "nopairs" then
+		fix_nopairs_grid(grid)
+	else
+		fix_eldest_grid(grid)
+	end
 end
 
 -- gets the compressed data from meta
