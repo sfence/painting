@@ -73,7 +73,7 @@ end
 
 minetest.register_node("painting:pic", {
 	description = "Picture",
-	tiles = { "white.png" },
+	tiles = { "painting_white.png" },
 	inventory_image = "painting_painted.png",
 	drawtype = "nodebox",
 	sunlight_propagates = true,
@@ -193,7 +193,7 @@ local paintbox = {
 minetest.register_entity("painting:paintent", {
 	collisionbox = { 0, 0, 0, 0, 0, 0 },
 	visual = "upright_sprite",
-	textures = { "white.png" },
+	textures = { "painting_white.png" },
 
 	on_punch = function(self, puncher)
 		--check for brush.
