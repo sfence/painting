@@ -58,45 +58,6 @@ local function initgrid(res)
 	return grid
 end
 
-function painting.to_imagestring(data, res)
-	if not data then
-		minetest.log("error", "[painting] missing data")
-		return
-	end
-	local cols = {}
-	for y = 0, res - 1 do
-		local xs = data[y]
-		for x = 0, res - 1 do
-			local col = xs[x]
-			--if col ~= "white" then
-				cols[col] = cols[col] or {}
-				cols[col][#cols[col]+1] = {y, x}
-			--end
-		end
-	end
-	local t,n = {},1
-	local groupopen = "([combine:"..res.."x"..res
-	for hexcolour,ps in pairs(cols) do
-		t[n] = groupopen
-		n = n+1
-		for _,p in pairs(ps) do
-			local y,x = unpack(p)
-			t[n] = ":"..p[1]..","..p[2].."=white.png"
-			n = n+1
-		end
-		t[n] = "^[colorize:#"..hexcolour..")^"
-		n = n+1
-	end
-	n = n-1
-	if n == 0 then
-		minetest.log("error", "[painting] no texels")
-		return "white.png"
-	end
-	t[n] = t[n]:sub(1,-2)
-	--print(table.concat(t))
-	return table.concat(t)
-end
-
 local function dot(v, w)	-- Inproduct.
 	return	v.x * w.x + v.y * w.y + v.z * w.z
 end
@@ -113,7 +74,7 @@ end
 minetest.register_node("painting:pic", {
 	description = "Picture",
 	tiles = { "white.png" },
-	inventory_image = "painted.png",
+	inventory_image = "painting_painted.png",
 	drawtype = "nodebox",
 	sunlight_propagates = true,
 	paramtype = "light",
@@ -134,10 +95,8 @@ minetest.register_node("painting:pic", {
 			end
 		end
 
-		local data = legacy.load_itemmeta(oldmetadata.fields["painting:picturedata"])
-
 		--put picture data back into inventory item
-		--[[local picture = ItemStack("painting:paintedcanvas")
+		local picture = ItemStack("painting:paintedcanvas")
 		local meta = picture:get_meta()
 		meta:set_int("resolution", oldmetadata.fields["resolution"])
 		meta:set_string("version", oldmetadata.fields["version"])
@@ -147,12 +106,7 @@ minetest.register_node("painting:pic", {
 			inv:add_item("main", picture)
 		else
 			minetest.add_item(digger:get_pos(), picture)
-		end--]]
-		digger:get_inventory():add_item("main", {
-			name = "painting:paintedcanvas",
-			count = 1,
-			metadata = get_metastring(data)
-		})
+		end
 	end
 })
 
@@ -160,26 +114,27 @@ minetest.register_node("painting:pic", {
 minetest.register_entity("painting:picent", {
 	collisionbox = { 0, 0, 0, 0, 0, 0 },
 	visual = "upright_sprite",
-	textures = { "white.png" },
+	textures = { "painting_white.png" },
 
 	on_activate = function(self, staticdata)
 		local pos = self.object:get_pos()
-		local data = legacy.load_itemmeta(minetest.get_meta(pos):get_string("painting:picturedata"))
-		data = minetest.deserialize(
-			painting.decompress(data)
-		)
-		if not data
-		or not data.grid then
+		local node_meta = minetest.get_meta(pos)
+		local data = {
+			res = node_meta:get_int("resolution"),
+			version = node_meta:get_string("version"),
+			grid = node_meta:get_string("grid"),
+		}
+		if (data.grid=="") then
 			return
 		end
+		data.grid = minetest.deserialize(painting.decompress(data.grid))
 		self.object:set_properties{textures = { painting.to_imagestring(data.grid, data.res) }}
 		if data.version ~= current_version then
 			minetest.log("legacy", "[painting] updating placed picture data")
 			data.version = current_version
-			data = painting.compress(
-				minetest.serialize(data)
-			)
-			minetest.get_meta(pos):set_string("painting:picturedata", get_metastring(data))
+			node_meta:set_int("resolution", data.res)
+			node_meta:set_string("version", data.version)
+			node_meta:set_string("grid", painting.compress(minetest.serialize(data.grid)))
 		end
 	end
 })
@@ -290,7 +245,7 @@ local walltoface = {-1, -1, 1, 3, 0, 2}
 --paintedcanvas picture inventory item
 minetest.register_craftitem("painting:paintedcanvas", {
 	description = "Painted Canvas",
-	inventory_image = "painted.png",
+	inventory_image = "painting_painted.png",
 	stack_max = 1,
 	groups = { snappy = 2, choppy = 2, oddly_breakable_by_hand = 2, not_in_creative_inventory=1 },
 
@@ -313,8 +268,16 @@ minetest.register_craftitem("painting:paintedcanvas", {
 		minetest.add_node(pos, {name = "painting:pic", param2 = fd})
 
 		--save metadata
-		local data = legacy.load_itemmeta(itemstack:get_metadata())
-		minetest.get_meta(pos):set_string("painting:picturedata", get_metastring(data))
+		local item_meta = itemstack:get_meta()
+		local node_meta = minetest.get_meta(pos)
+		local data = {
+			res = item_meta:get_int("resolution"),
+			version = item_meta:get_string("version"),
+			grid = item_meta:get_string("grid"),
+		}
+		node_meta:set_int("resolution", data.res)
+		node_meta:set_string("version", data.version)
+		node_meta:set_string("grid", data.grid)
 
 		--add entity
 		local dir = dirs[fd]
@@ -323,10 +286,10 @@ minetest.register_craftitem("painting:paintedcanvas", {
 		pos.x = pos.x + dir.x * off
 		pos.z = pos.z + dir.z * off
 		
-		data = minetest.deserialize(painting.decompress(data))
+		data.grid = minetest.deserialize(painting.decompress(data.grid))
 
 		local obj = minetest.add_entity(pos, "painting:picent")
-		obj:set_properties{ textures = { to_imagestring(data.grid, data.res) }}
+		obj:set_properties{ textures = { painting.to_imagestring(data.grid, data.res) }}
 		obj:set_yaw(math.pi * fd / -2)
 
 		return ItemStack("")
@@ -351,8 +314,8 @@ local canvasbox = {
 
 minetest.register_node("painting:canvasnode", {
 	description = "Canvas",
-	tiles = { "white.png" },
-	inventory_image = "painted.png",
+	tiles = { "painting_white.png" },
+	inventory_image = "painting_painted.png",
 	drawtype = "nodebox",
 	sunlight_propagates = true,
 	paramtype = "light",
@@ -379,19 +342,19 @@ minetest.register_node("painting:canvasnode", {
 		end
 
 		pos.y = pos.y-1
-		minetest.get_meta(pos):set_int("has_canvas", 0)
+    local meta = minetest.get_meta(pos)
+		meta:set_int("has_canvas", 0)
+		meta:set_int("gametime", minetest.get_gametime()+2)
 
 		if not data.grid then
 			return
 		end
 		legacy.fix_grid(data.grid, data.version)
-		local item = ItemStack({
-			name = "painting:paintedcanvas",
-			count = 1,
-			metadata = get_metastring(painting.compress(minetest.serialize(data)))
-		})
+		local item = ItemStack("painting:paintedcanvas")
 		local item_meta = item:get_meta()
-		item_meta:set_int("painting_resolution", data.res)
+		item_meta:set_int("resolution", data.res)
+		item_meta:set_string("version", data.version)
+		item_meta:set_string("grid", painting.compress(minetest.serialize(data.grid)))
 		digger:get_inventory():add_item("main", item)
 	end
 })
@@ -423,14 +386,20 @@ minetest.register_node("painting:easel", {
 	groups = { snappy = 2, choppy = 2, oddly_breakable_by_hand = 2 },
 
 	on_punch = function(pos, node, player)
+		local meta = minetest.get_meta(pos)
+    
+    -- prevent canvas to be place immediately into easel again
+    if (meta:get_int("gametime")>minetest.get_gametime()) then
+      return
+    end
+    
 		local wield_item = player:get_wielded_item()
 		local wield_meta = wield_item:get_meta()
 		local def = wield_item:get_definition()
-		if (not def) or ((not def._painting_canvas_resolution) and (wield_meta:get_int("painting_resolution")==0)) then	-- Can only put the canvas on there.
+		if (not def) or ((not def._painting_canvas_resolution) and (wield_meta:get_int("resolution")==0)) then	-- Can only put the canvas on there.
 			return
 		end
 
-		local meta = minetest.get_meta(pos)
 		pos.y = pos.y+1
 		if minetest.get_node(pos).name ~= "air" then
 			-- this is not likely going to happen
@@ -448,12 +417,17 @@ minetest.register_node("painting:easel", {
 		obj:set_armor_groups{immortal=1}
 		obj:set_yaw(math.pi * fd / -2)
 		local ent = obj:get_luaentity()
-		local data = wield_item:get_metadata();
-		if data and (data~="") then
-			data = minetest.deserialize(painting.decompress(legacy.load_itemmeta(data)))
-			ent.grid = data.grid
+		local wield_meta = wield_item:get_meta();
+		local data = {
+			res = wield_meta:get_int("resolution"),
+			version = wield_meta:get_string("version"),
+			grid = wield_meta:get_string("grid"),
+		}
+		if (data.res>0) and (data.version=="hexcolors") and (data.grid~="") then
+			ent.grid = minetest.deserialize(painting.decompress(data.grid))
 			ent.res = data.res
 			ent.version = data.version
+			obj:set_properties{textures = { painting.to_imagestring(ent.grid, ent.res) }}
 		else
 			ent.grid = initgrid(def._painting_canvas_resolution)
 			ent.res = def._painting_canvas_resolution
@@ -591,7 +565,7 @@ end
 function legacy.load_itemmeta(data)
 	local vend = data:find"(version)"
 	if not vend then -- the oldest version
-		local t = minetest.deserialize(data)
+		local t = minetest.deserialize(painting.decompress(data))
 		if t.version then
 			minetest.log("error", "[painting] this musn't happen!")
 		end
