@@ -48,7 +48,7 @@ end
 
 minetest.register_node("painting:pic", {
 	description = S("Picture"),
-	tiles = { "painting_white.png" },
+	tiles = { "white.png" },
 	inventory_image = "painting_painted.png",
 	drawtype = "nodebox",
 	sunlight_propagates = true,
@@ -89,7 +89,7 @@ minetest.register_node("painting:pic", {
 minetest.register_entity("painting:picent", {
 	collisionbox = { 0, 0, 0, 0, 0, 0 },
 	visual = "upright_sprite",
-	textures = { "painting_white.png" },
+	textures = { "white.png" },
 
 	on_activate = function(self, staticdata)
 		local pos = self.object:get_pos()
@@ -225,7 +225,7 @@ local paintbox = {
 minetest.register_entity("painting:paintent", {
 	collisionbox = { 0, 0, 0, 0, 0, 0 },
 	visual = "upright_sprite",
-	textures = { "painting_white.png" },
+	textures = { "white.png" },
 
 	on_punch = function(self, puncher)
 		--check for brush.
@@ -370,7 +370,7 @@ local canvasbox = {
 
 minetest.register_node("painting:canvasnode", {
 	description = S("Canvas"),
-	tiles = { "painting_white.png" },
+	tiles = { "white.png" },
 	inventory_image = "painting_painted.png",
 	drawtype = "nodebox",
 	sunlight_propagates = true,
