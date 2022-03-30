@@ -73,7 +73,7 @@ minetest.register_node("painting:pic", {
 		--put picture data back into inventory item
 		local picture = ItemStack("painting:paintedcanvas")
 		local meta = picture:get_meta()
-		meta:set_int("resolution", oldmetadata.fields["resolution"])
+		meta:set_int("resolution", oldmetadata.fields["resolution"] or 16)
 		meta:set_string("version", oldmetadata.fields["version"])
 		meta:set_string("grid", oldmetadata.fields["grid"])
 		local inv = digger:get_inventory()
@@ -616,6 +616,14 @@ function legacy.load_itemmeta(data)
 	local vend = data:find"(version)"
 	if not vend then -- the oldest version
 		local t = minetest.deserialize(data)
+		if not t then
+			minetest.log("error", "[painting] this musn't happen! dump: "..dump(data))
+			return {
+				grid = initgrid(16),
+				res = 16,
+				version = current_version,
+			}
+		end
 		if t.version then
 			minetest.log("error", "[painting] this musn't happen!")
 		end
