@@ -1,7 +1,7 @@
 
 local S = painting.translator
 
-local hexcols = painting.hexcolors
+local hexcolors = painting.hexcolors
 local colors = painting.colors
 local revcolors = painting.revcolors
 
@@ -27,7 +27,7 @@ local function initgrid(res)
 	for x = 0, a do
 		grid[x] = {}
 		for y = 0, a do
-			grid[x][y] = hexcols["white"]
+			grid[x][y] = hexcolors["white"]
 		end
 	end
 	return grid
@@ -109,7 +109,7 @@ minetest.register_entity("painting:picent", {
 			return
 		end
 		if data.version ~= current_version then
-			minetest.log("legacy", "[painting] updating placed picture data")
+			minetest.log("info", "[painting] updating placed picture data")
 			legacy.fix_grid(data.grid, data.version)
 			data.version = current_version
 			node_meta:set_int("resolution", data.res)
@@ -325,7 +325,7 @@ minetest.register_craftitem("painting:paintedcanvas", {
 		if data.grid=="" then
 			data = legacy.load_itemmeta(itemstack:get_metadata())
 			if not data or not data.grid then
-				minetest.log("legacy", "[painting] Painting data fix failed.")
+				minetest.log("info", "[painting] Painting data fix failed.")
 				return itemstack
 			end
 		end
@@ -538,8 +538,8 @@ local vage_revcolours = {} -- ← colours in pairs order
 for color, _ in pairs(textures) do
 	local brush_new = table.copy(brush)
 	brush_new.description = color:gsub("^%l", string.upper).." brush"
-	brush_new.inventory_image = "painting_brush_stem.png^(painting_brush_head.png^[colorize:#"..hexcols[color]..":255)^painting_brush_head.png"
-	brush_new._painting_brush.color = hexcols[color]
+	brush_new.inventory_image = "painting_brush_stem.png^(painting_brush_head.png^[colorize:#"..hexcolors[color]..":255)^painting_brush_head.png"
+	brush_new._painting_brush.color = hexcolors[color]
 	minetest.register_tool("painting:brush_"..color, brush_new)
 
 	vage_revcolours[#vage_revcolours+1] = color
@@ -602,7 +602,7 @@ function legacy.fix_grid(grid, version)
 		return
 	end
 
-	minetest.log("legacy", "[painting] updating grid")
+	minetest.log("info", "[painting] updating grid")
 	
 	if version == "nopairs" then
 		fix_nopairs_grid(grid)
@@ -615,11 +615,11 @@ end
 function legacy.load_itemmeta(data)
 	local vend = data:find"(version)"
 	if not vend then -- the oldest version
-		local t = minetest.deserialize(painting.old_decompress(data))
+		local t = minetest.deserialize(data)
 		if t.version then
 			minetest.log("error", "[painting] this musn't happen!")
 		end
-		minetest.log("legacy", "[painting] updating painting meta")
+		minetest.log("info", "[painting] updating painting meta")
 		legacy.fix_grid(t.grid)
 		t.version = current_version
 		return t
@@ -627,7 +627,7 @@ function legacy.load_itemmeta(data)
 	local version = data:sub(1, vend-2)
 	data = data:sub(vend+8)
 	if version == current_version then
-		return minetest.deserialize(painting.old_decompress(data))
+		return minetest.deserialize(painting.decompress(data))
 	end
 	local t = minetest.deserialize(painting.old_decompress(data))
 	t.version = version

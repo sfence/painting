@@ -60,8 +60,11 @@ for color,hexcol in pairs(painting.hexcolors) do
 			description = S("Glass with "..des_col.." Oil Color"),
 			inventory_image = "painting_glass_oil_color.png^[colorize:#"..hexcol.."^painting_glass.png",
 		})
-	local sculpture_tool_color = table.copy(sculpture_tool)
-	sculpture_tool_color.brush_color = hexcol
+	local sculpture_tool_color = nil
+  if sculpture_tool then
+    sculpture_tool_color = table.copy(sculpture_tool)
+	  sculpture_tool_color.brush_color = hexcol
+  end
 	minetest.register_tool("painting:brush_oil_color_"..color, {
 			description = S("Brush with "..des_col.." Oil Color"),
 			inventory_image = "painting_glass_oil_color.png^[colorize:#"..hexcol.."^painting_glass.png",
