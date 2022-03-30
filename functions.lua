@@ -40,10 +40,18 @@ function painting.to_imagestring(data, res)
 	n = n-1
 	if n == 0 then
 		minetest.log("error", "[painting] no texels")
-		return "white.png"
+		return "painting_white.png"
 	end
 	t[n] = t[n]:sub(1,-2)
 	--print(table.concat(t))
 	return table.concat(t)
+end
+
+function painting.old_compress(string)
+  return minetest.compress(string, "deflate")
+end
+
+function painting.old_decompress(string)
+  return minetest.decompress(string, "deflate")
 end
 

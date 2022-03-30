@@ -27,7 +27,9 @@ elseif minetest.get_modpath("hades_core") then
 	end
 	if minetest.get_modpath("hades_animals") then
 		local hairball = minetest.settings:get("mobs_hairball")
-		items.brush_head = "mobs:hairball"
+    if hairball then
+		  items.brush_head = "mobs:hairball"
+    end
 	end
 else
 	if minetest.get_modpath("clothing") then
@@ -35,7 +37,9 @@ else
 	end
 	if minetest.get_modpath("mobs_animal") then
 		local hairball = minetest.settings:get("mobs_hairball")
-		items.brush_head = "mobs:hairball"
+    if hairball then
+		  items.brush_head = "mobs:hairball"
+    end
 	end
 end
 
