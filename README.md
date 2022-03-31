@@ -8,9 +8,15 @@ Optional depends:
 
 jin_xi version: https://forum.minetest.net/viewtopic.php?f=11&t=2588
 
-license
--------
+Source code:
+-----------------------
+Copyright (c) 2012-2022 jix xi, Jaspen den Quden, SFENCE and contributors
+MIT - check LICENSE file
 
-Source, textures and all other files:
-Copyright (C) 2012-2021 obneq aka jin xi, Jasper den Ouden, SFENCE and contributors under WTFPL
+License of media (textures, sounds and models):
+-----------------------------------------------
+CC BY-SA 4.0 - check LICENSE file
+
+Copyright (c) 2012-2022 jix xi, Jaspen den Quden, SFENCE and contributor (CC BY-SA 4.0):
+All textures not mentioned below.
 
