@@ -602,8 +602,8 @@ function legacy.fix_grid(grid, version)
 		return
 	end
 
-	minetest.log("info", "[painting] updating grid")
-	print("Updating grid version "..dump(grid.version))
+	minetest.log("info", "[painting] updating grid version "..dump(version))
+	--print("Updating grid version "..dump(version))
 	
 	if version == "nopairs" then
 		fix_nopairs_grid(grid)
