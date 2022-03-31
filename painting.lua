@@ -603,6 +603,7 @@ function legacy.fix_grid(grid, version)
 	end
 
 	minetest.log("info", "[painting] updating grid")
+	print("Updating grid version "..dump(grid.version))
 	
 	if version == "nopairs" then
 		fix_nopairs_grid(grid)
@@ -628,8 +629,8 @@ function legacy.load_itemmeta(data)
 			minetest.log("error", "[painting] this musn't happen!")
 		end
 		minetest.log("info", "[painting] updating painting meta")
-		legacy.fix_grid(t.grid)
-		t.version = current_version
+		--legacy.fix_grid(t.grid)
+		--t.version = current_version
 		return t
 	end
 	local version = data:sub(1, vend-2)
@@ -639,8 +640,8 @@ function legacy.load_itemmeta(data)
 	end
 	local t = minetest.deserialize(painting.old_decompress(data))
 	t.version = version
-	legacy.fix_grid(t.grid)
-	t.version = current_version
+	--legacy.fix_grid(t.grid)
+	--t.version = current_version
 	return t
 end
 
