@@ -509,6 +509,7 @@ local brush = {
 		max_drop_level=0,
 		groupcaps = {}
 	},
+	groups = {not_in_creative_inventory = 1},
 	_painting_brush = {
 		points = {
 			{x=0,y=0,a=1},
@@ -531,7 +532,6 @@ local textures = {
 minetest.register_craftitem("painting:brush", {
 		description = "Brush",
 		inventory_image = "painting_brush_stem.png^(painting_brush_head.png^[colorize:#FFFFFF:128)^painting_brush_head.png",
-		groups = {not_in_creative_inventory = 1},
 	})
 
 local vage_revcolours = {} -- ← colours in pairs order
