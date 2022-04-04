@@ -20,3 +20,9 @@ CC BY-SA 4.0 - check LICENSE file
 Copyright (c) 2012-2022 jix xi, Jaspen den Quden, SFENCE and contributor (CC BY-SA 4.0):
 All textures not mentioned below.
 
+
+Developers:
+-------------
+
+w.png texture should be identical to sculpture w.png texture.
+

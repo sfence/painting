@@ -31,7 +31,7 @@ function painting.to_imagestring(data, res)
 		n = n+1
 		for _,p in pairs(ps) do
 			local y,x = unpack(p)
-			t[n] = ":"..p[1]..","..p[2].."=white.png"
+			t[n] = ":"..p[1]..","..p[2].."=w.png"
 			n = n+1
 		end
 		t[n] = "^[colorize:#"..hexcolour..")^"
@@ -40,10 +40,10 @@ function painting.to_imagestring(data, res)
 	n = n-1
 	if n == 0 then
 		minetest.log("error", "[painting] no texels")
-		return "white.png"
+		return "w.png"
 	end
 	t[n] = t[n]:sub(1,-2)
-	--print(table.concat(t))
+	--print("Image string len: "..string.len(table.concat(t)))
 	return table.concat(t)
 end
 
