@@ -68,7 +68,7 @@ minetest.register_chatcommand("painting_export", {
 
 minetest.register_chatcommand("painting_import", {
     params = "<filename> [position]",
-    description = "Export painting data to lua file in world directory. If not position is set, wielded item is used.",
+    description = "Import painting data from lua file in world directory. If not position is set, wielded item is used.",
     privs = {painting_import=true},
     func = function(name, param)
         local params = string.split(param or "", " ")

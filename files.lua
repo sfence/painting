@@ -3,8 +3,12 @@ local paintingdir = minetest.get_worldpath().."/painting/"
 
 minetest.mkdir(paintingdir)
 
+function painting.complete_path(filename)
+  return paintingdir..filename
+end
+
 function painting.file_exists(filename)
-  local file = io.open(paintingdir..filename,"r")
+  local file = io.open(painting.complete_path(filename),"r")
   if (file==nil) then
     return false
   end
@@ -13,7 +17,7 @@ function painting.file_exists(filename)
 end
 
 function painting.file_to_string(filename)
-  local file = io.open(paintingdir..filename,"r")
+  local file = io.open(paintingdir.complete_path(filename),"r")
   if not file then
     return nil
   end
@@ -23,7 +27,7 @@ function painting.file_to_string(filename)
 end
 
 function painting.string_to_file(filename, text)
-  local file = io.open(paintingdir..filename,"w")
+  local file = io.open(paintingdir.complete_path(filename),"w")
   if not file then
     return false
   end

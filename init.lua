@@ -23,8 +23,8 @@ dofile(modpath.."/crafting.lua")
 
 dofile(modpath.."/files.lua")
 dofile(modpath.."/commands.lua")
-if minetest.get_modpath("tga_encode") then
-  --dofile(modpath.."/export_tga.lua")
+if minetest.get_modpath("tga_encoder") then
+  dofile(modpath.."/export_tga.lua")
 end
 
 minetest.log("action", "Painting mod loaded.")
