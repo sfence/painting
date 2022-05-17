@@ -16,6 +16,8 @@ local picbox = {
 local current_version = "hexcolors"
 local legacy = {}
 
+painting.current_version = current_version
+
 -- puts the version before the compressed data
 local function get_metastring(data)
 	return current_version.."(version)"..data

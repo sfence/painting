@@ -5,6 +5,8 @@
 -- this texture is created by minetests internal image
 -- compositing engine (see tile.cpp).
 
+minetest.log("action", "Painting mod loading...")
+
 painting = {
 	translator = minetest.get_translator("painting")
 }
@@ -19,4 +21,11 @@ dofile(modpath.."/water_color.lua")
 dofile(modpath.."/oil_color.lua")
 dofile(modpath.."/crafting.lua")
 
+dofile(modpath.."/files.lua")
+dofile(modpath.."/commands.lua")
+if minetest.get_modpath("tga_encode") then
+  --dofile(modpath.."/export_tga.lua")
+end
+
+minetest.log("action", "Painting mod loaded.")
 
