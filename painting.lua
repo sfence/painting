@@ -522,30 +522,35 @@ local brush = {
 }
 
 local textures = {
-	white = "white.png", yellow = "yellow.png",
-	orange = "orange.png", red = "red.png",
-	violet = "violet.png", blue = "blue.png",
-	green = "green.png", magenta = "magenta.png",
-	cyan = "cyan.png", grey = "grey.png",
-	dark_grey = "darkgrey.png", black = "black.png",
-	dark_green = "darkgreen.png", brown="brown.png",
-	pink = "pink.png"
+	[1] = "white",
+	[2] = "dark_green",
+	[3] = "grey",
+	[4] = "red",
+	[5] = "brown",
+	[6] = "cyan",
+	[7] = "orange",
+	[8] = "violet",
+	[9] = "dark_grey",
+	[10] = "pink",
+	[11] = "green",
+	[12] = "magenta",
+	[13] = "yellow",
+	[14] = "black",
+	[15] = "blue",
 }
+local vage_revcolours = textures
 
 minetest.register_craftitem("painting:brush", {
 		description = "Brush",
 		inventory_image = "painting_brush_stem.png^(painting_brush_head.png^[colorize:#FFFFFF:128)^painting_brush_head.png",
 	})
 
-local vage_revcolours = {} -- ← colours in pairs order
-for color, _ in pairs(textures) do
+for _, color in pairs(textures) do
 	local brush_new = table.copy(brush)
 	brush_new.description = color:gsub("^%l", string.upper).." brush"
 	brush_new.inventory_image = "painting_brush_stem.png^(painting_brush_head.png^[colorize:#"..hexcolors[color]..":255)^painting_brush_head.png"
 	brush_new._painting_brush.color = hexcolors[color]
 	minetest.register_tool("painting:brush_"..color, brush_new)
-
-	vage_revcolours[#vage_revcolours+1] = color
 end
 
 if minetest.get_modpath("unifieddyes") then
