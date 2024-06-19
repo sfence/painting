@@ -541,13 +541,13 @@ local textures = {
 local vage_revcolours = textures
 
 minetest.register_craftitem("painting:brush", {
-		description = "Brush",
+		description = S("Brush"),
 		inventory_image = "painting_brush_stem.png^(painting_brush_head.png^[colorize:#FFFFFF:128)^painting_brush_head.png",
 	})
 
 for _, color in pairs(textures) do
 	local brush_new = table.copy(brush)
-	brush_new.description = color:gsub("^%l", string.upper).." brush"
+	brush_new.description = S(color:gsub("^%l", string.upper).." brush")
 	brush_new.inventory_image = "painting_brush_stem.png^(painting_brush_head.png^[colorize:#"..hexcolors[color]..":255)^painting_brush_head.png"
 	brush_new._painting_brush.color = hexcolors[color]
 	minetest.register_tool("painting:brush_"..color, brush_new)
