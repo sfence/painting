@@ -302,6 +302,12 @@ minetest.register_craftitem("painting:paintedcanvas", {
 	on_place = function(itemstack, placer, pointed_thing)
 		--place node
 		local pos = pointed_thing.above
+
+		local node_above = minetest.get_node(pos).name
+		if node_above ~= "air" then
+			return
+		end
+
 		if minetest.is_protected(pos, placer:get_player_name()) then
 			return
 		end
