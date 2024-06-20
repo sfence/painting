@@ -338,6 +338,9 @@ minetest.register_craftitem("painting:paintedcanvas", {
 			end
 		end
 		legacy.fix_grid(data.grid, data.version)
+		if data.version == "" or not data.version then
+			data.grid = painting.compress(minetest.serialize(data.grid))
+		end
     data.version = current_version
 		node_meta:set_int("resolution", data.res)
 		node_meta:set_string("version", data.version)
