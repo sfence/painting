@@ -362,11 +362,12 @@ minetest.register_craftitem("painting:paintedcanvas", {
 
 --canvas inventory items
 for i = 4,6 do
-	minetest.register_craftitem("painting:canvas_"..2^i, {
-		description = S("Canvas").." "..(2^i).."x"..(2^i),
-		inventory_image = "default_paper.png",
+	local res = 2^i
+	minetest.register_craftitem("painting:canvas_"..res, {
+		description = S("Canvas").." "..res.."x"..res,
+		inventory_image = "default_paper.png^painting_canvas_"..res.."_overlay.png",
 		stack_max = 99,
-		_painting_canvas_resolution = 2^i,
+		_painting_canvas_resolution = res,
 	})
 end
 
