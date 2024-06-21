@@ -89,9 +89,11 @@ minetest.register_node("painting:pic", {
 
 -- picture texture entity
 minetest.register_entity("painting:picent", {
-	collisionbox = { 0, 0, 0, 0, 0, 0 },
-	visual = "upright_sprite",
-	textures = { "painting_white.png" },
+	initial_properties = {
+		collisionbox = { 0, 0, 0, 0, 0, 0 },
+		visual = "upright_sprite",
+		textures = { "painting_white.png" },
+	},
 
 	on_activate = function(self, staticdata)
 		local pos = self.object:get_pos()
@@ -226,9 +228,11 @@ local paintbox = {
 
 -- Painting as being painted.
 minetest.register_entity("painting:paintent", {
-	collisionbox = { 0, 0, 0, 0, 0, 0 },
-	visual = "upright_sprite",
-	textures = { "painting_white.png" },
+	initial_properties = {
+		collisionbox = { 0, 0, 0, 0, 0, 0 },
+		visual = "upright_sprite",
+		textures = { "painting_white.png" },
+	},
 
 	on_punch = function(self, puncher)
 		--check for brush.
