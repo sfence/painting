@@ -336,12 +336,14 @@ minetest.register_craftitem("painting:paintedcanvas", {
 				minetest.log("info", "[painting] Painting data fix failed.")
 				return itemstack
 			end
+		else
+			data.grid = minetest.deserialize(painting.decompress(data.grid))
 		end
 		legacy.fix_grid(data.grid, data.version)
-    data.version = current_version
+		data.version = current_version
 		node_meta:set_int("resolution", data.res)
 		node_meta:set_string("version", data.version)
-		node_meta:set_string("grid", data.grid)
+		node_meta:set_string("grid", painting.compress(minetest.serialize(data.grid)))
 
 		--add entity
 		local dir = dirs[fd]
@@ -349,8 +351,6 @@ minetest.register_craftitem("painting:paintedcanvas", {
 
 		pos.x = pos.x + dir.x * off
 		pos.z = pos.z + dir.z * off
-		
-		data.grid = minetest.deserialize(painting.decompress(data.grid))
 
 		local obj = minetest.add_entity(pos, "painting:picent")
 		obj:set_properties{ textures = { painting.to_imagestring(data.grid, data.res) }}
