@@ -499,10 +499,14 @@ minetest.register_node("painting:easel", {
 			ent.res = data.res
 			ent.version = data.version
 			obj:set_properties{textures = { painting.to_imagestring(ent.grid, ent.res) }}
+			player:get_inventory():remove_item("main", wield_item:take_item())
 		else
 			ent.grid = initgrid(def._painting_canvas_resolution)
 			ent.res = def._painting_canvas_resolution
 			ent.version = current_version
+			if not minetest.is_creative_enabled(player:get_player_name()) then
+				player:get_inventory():remove_item("main", wield_item:take_item())
+			end
 		end
 		ent.fd = fd
 
