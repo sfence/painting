@@ -255,15 +255,16 @@ minetest.register_entity("painting:paintent", {
 		local x,y = figure_paint_pos(self, puncher)
 		draw_input(self, def._painting_brush, x,y, puncher:get_player_control().sneak)
 		
-		if def._painting_brush.wear then
+		if not minetest.is_creative_enabled(puncher:get_player_name())
+				and def._painting_brush.wear then
 			wielded:add_wear(def._painting_brush.wear)
 			if wielded:get_count()==0 then
 				if def._painting_brush.break_stack then
 					wielded = ItemStack(def._painting_brush.break_stack)
 				end
 			end
+			puncher:set_wielded_item(wielded)
 		end
-		puncher:set_wielded_item(wielded)
 	end,
 
 	on_activate = function(self, staticdata)
@@ -499,10 +500,14 @@ minetest.register_node("painting:easel", {
 			ent.res = data.res
 			ent.version = data.version
 			obj:set_properties{textures = { painting.to_imagestring(ent.grid, ent.res) }}
+			player:get_inventory():remove_item("main", wield_item:take_item())
 		else
 			ent.grid = initgrid(def._painting_canvas_resolution)
 			ent.res = def._painting_canvas_resolution
 			ent.version = current_version
+			if not minetest.is_creative_enabled(player:get_player_name()) then
+				player:get_inventory():remove_item("main", wield_item:take_item())
+			end
 		end
 		ent.fd = fd
 
