@@ -500,19 +500,22 @@ core.register_node("painting:easel", {
 			ent.res = data.res
 			ent.version = data.version
 			obj:set_properties{textures = { painting.to_imagestring(ent.grid, ent.res) }}
-			player:get_inventory():remove_item("main", wield_item:take_item())
 		else
 			ent.grid = initgrid(def._painting_canvas_resolution)
 			ent.res = def._painting_canvas_resolution
 			ent.version = current_version
-			if not core.is_creative_enabled(player:get_player_name()) then
-				player:get_inventory():remove_item("main", wield_item:take_item())
-			end
 		end
 		ent.fd = fd
 
 		meta:set_int("has_canvas", 1)
-		player:get_inventory():set_stack("main", wield_item_idx, ItemStack(""))
+
+		-- Remove only 1 canvas from the inventory when the player is not in creative mode.
+		if not core.is_creative_enabled(player:get_player_name()) then
+			local inv = player:get_inventory()
+			local current_stack = inv:get_stack("main", wield_item_idx)
+			current_stack:take_item(1)
+			inv:set_stack("main", wield_item_idx, current_stack)
+		end
 	end,
 
 	can_dig = function(pos)
