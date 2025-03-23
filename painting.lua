@@ -496,23 +496,26 @@ core.register_node("painting:easel", {
 			grid = wield_meta:get_string("grid"),
 		}
 		if (data.res>0) and (data.version=="hexcolors") and (data.grid~="") then
+			-- add paining for edit
 			ent.grid = core.deserialize(painting.decompress(data.grid))
 			ent.res = data.res
 			ent.version = data.version
 			obj:set_properties{textures = { painting.to_imagestring(ent.grid, ent.res) }}
-			player:get_inventory():remove_item("main", wield_item:take_item())
+			wield_item:take_item()
+			player:set_wielded_item(wield_item)
 		else
+			-- add empthy canvas
 			ent.grid = initgrid(def._painting_canvas_resolution)
 			ent.res = def._painting_canvas_resolution
 			ent.version = current_version
 			if not core.is_creative_enabled(player:get_player_name()) then
-				player:get_inventory():remove_item("main", wield_item:take_item())
+				wield_item:take_item()
+				player:set_wielded_item(wield_item)
 			end
 		end
 		ent.fd = fd
 
 		meta:set_int("has_canvas", 1)
-		player:get_inventory():set_stack("main", wield_item_idx, ItemStack(""))
 	end,
 
 	can_dig = function(pos)
