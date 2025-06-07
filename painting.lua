@@ -84,7 +84,9 @@ core.register_node("painting:pic", {
 		else
 			core.add_item(digger:get_pos(), picture)
 		end
-	end
+	end,
+
+	on_rotate = false, -- screwdriver
 })
 
 -- picture texture entity
@@ -427,7 +429,8 @@ core.register_node("painting:canvasnode", {
 		item_meta:set_string("version", data.version)
 		item_meta:set_string("grid", painting.compress(core.serialize(data.grid)))
 		digger:get_inventory():add_item("main", item)
-	end
+	end,
+	on_rotate = false, -- screwdriver
 })
 
 local easelbox = { -- Specifies 3d model.
@@ -520,7 +523,8 @@ core.register_node("painting:easel", {
 
 	can_dig = function(pos)
 		return core.get_meta(pos):get_int("has_canvas") == 0
-	end
+	end,
+	on_rotate = false, -- screwdriver
 })
 
 --brushes
