@@ -84,7 +84,9 @@ core.register_node("painting:pic", {
 		else
 			core.add_item(digger:get_pos(), picture)
 		end
-	end
+	end,
+
+	on_rotate = false,
 })
 
 -- picture texture entity
@@ -427,7 +429,9 @@ core.register_node("painting:canvasnode", {
 		item_meta:set_string("version", data.version)
 		item_meta:set_string("grid", painting.compress(core.serialize(data.grid)))
 		digger:get_inventory():add_item("main", item)
-	end
+	end,
+
+	on_rotate = false,
 })
 
 local easelbox = { -- Specifies 3d model.
@@ -524,6 +528,44 @@ core.register_node("painting:easel", {
 
 	can_dig = function(pos)
 		return core.get_meta(pos):get_int("has_canvas") == 0
+	end,
+
+	on_rotate = function(pos, node, user, mode, new_param2)
+		local meta = core.get_meta(pos)
+		if meta:get_int("has_canvas") == 0 then
+			node.param2 = new_param2
+			core.swap_node(pos, node)
+			return true
+		end
+		local cpos = vector.new(pos)
+		cpos.y = cpos.y+1
+		local cnode = core.get_node(cpos)
+		if cnode.name ~= "painting:canvasnode" then
+			node.param2 = new_param2
+			core.swap_node(pos, node)
+			return true
+		end
+		cnode.param2 = new_param2
+		core.swap_node(cpos, cnode)
+
+		local dir = dirs[new_param2]
+		cpos.x = cpos.x - 0.01 * dir.x
+		cpos.z = cpos.z - 0.01 * dir.z
+
+		for _,e in pairs(core.get_objects_inside_radius(cpos, 0.1)) do
+			local le = e:get_luaentity()
+			if le.name=="painting:paintent" then
+				e:set_pos(cpos)
+				e:set_properties{ collisionbox = paintbox[new_param2%2] }
+				e:set_yaw(math.pi * new_param2 / -2)
+				le.fd = new_param2
+				break
+			end
+		end
+		
+		node.param2 = new_param2
+		core.swap_node(pos, node)
+		return true
 	end
 })
 
