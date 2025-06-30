@@ -86,14 +86,7 @@ core.register_node("painting:pic", {
 		end
 	end,
 
-	on_rotate = function(pos, node)
-		--find and remove the entity
-		for _,e in pairs(core.get_objects_inside_radius(pos, 0.5)) do
-			if e:get_luaentity().name == "painting:picent" then
-				
-			end
-		end
-	end
+	on_rotate = false,
 })
 
 -- picture texture entity
