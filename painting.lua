@@ -427,7 +427,19 @@ core.register_node("painting:canvasnode", {
 		item_meta:set_string("version", data.version)
 		item_meta:set_string("grid", painting.compress(core.serialize(data.grid)))
 		digger:get_inventory():add_item("main", item)
-	end
+	end,
+	
+	on_blast = function(pos, intensity)
+		for obj in core.objects_inside_radius(pos, 0.1) do
+			local e = obj:get_luaentity()
+			if e.name == "painting:paintent" then
+				e.object:set_hp(0)
+				-- suppose there can be only one paintent on a canvas
+				break
+			end
+		end
+		core.remove_node(pos)
+	end,
 })
 
 local easelbox = { -- Specifies 3d model.
@@ -524,7 +536,20 @@ core.register_node("painting:easel", {
 
 	can_dig = function(pos)
 		return core.get_meta(pos):get_int("has_canvas") == 0
-	end
+	end,
+	
+	on_blast = function(pos, intensity)
+		if core.get_meta(pos):get_int("has_canvas") == 1 then
+			local canvas_pos = {x = pos.x, y = pos.y + 1, z = pos.z}
+			local canvas_node = core.get_node(canvas_pos)
+			local canvas_node_def = core.registered_nodes[canvas_node.name]
+			
+			if canvas_node_def.on_blast then
+				canvas_node_def.on_blast(canvas_pos)
+			end
+		end
+		core.remove_node(pos)
+	end,
 })
 
 --brushes
