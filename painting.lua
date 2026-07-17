@@ -482,6 +482,12 @@ core.register_node("painting:easel", {
 			return
 		end
 		local fd = node.param2
+
+		-- prevent server crash in case that easel was rotated in 3D
+		if fd > 3 then
+			return
+		end
+
 		core.add_node(pos, { name = "painting:canvasnode", param2 = fd})
 
 		local dir = dirs[fd]
