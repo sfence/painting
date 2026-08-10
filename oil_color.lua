@@ -9,6 +9,9 @@ local empty_bottle = "vessels:glass_bottle"
 local feather = nil
 local feather_img = nil
 
+if core.get_modpath("lottfarming") then
+	oil_bottle = "lottfarming:vegetable_oil"
+end
 if core.get_modpath("petz") then
 	feather = "petz:dcuky_feather"
 	feather_img = "petz_ducky_feather.png"
